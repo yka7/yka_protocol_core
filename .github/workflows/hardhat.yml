@@ -26,6 +26,9 @@ jobs:
       - name: Install project dependencies
         run: npm install
 
+      - name: Run Solidity linter
+        run: npm run lint
+
       - name: Compile contracts
         run: npm run compile
 
