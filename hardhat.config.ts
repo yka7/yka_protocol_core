@@ -32,7 +32,7 @@ const config: HardhatUserConfig = {
     mumbai: {
       url: MUMBAI_RPC_URL,
       accounts: [PRIVATE_KEY],
-      chainId: 80001,
+      chainId: 80002,
     },
 
     // Polygonメインネット（将来的な使用のため）
