@@ -1,21 +1,28 @@
-// This setup uses Hardhat Ignition to manage smart contract deployments.
-// Learn more about it at https://hardhat.org/ignition
-
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { parseEther } from "viem";
 
-const JAN_1ST_2030 = 1893456000;
-const ONE_GWEI: bigint = parseEther("0.001");
+// Default parameters for the YKAToken deployment
+const DEFAULT_INITIAL_OWNER = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"; // Default to Hardhat account 0
+const DEFAULT_INITIAL_SUPPLY_STRING = "1000000"; // 1 million tokens
 
-const LockModule = buildModule("LockModule", (m) => {
-  const unlockTime = m.getParameter("unlockTime", JAN_1ST_2030);
-  const lockedAmount = m.getParameter("lockedAmount", ONE_GWEI);
+const YKATokenModule = buildModule("YKATokenModule", (m) => {
+  // Get deployment parameters or use defaults
+  const initialOwner = m.getParameter("initialOwner", DEFAULT_INITIAL_OWNER);
+  const initialSupply = m.getParameter("initialSupply", DEFAULT_INITIAL_SUPPLY_STRING);
 
-  const lock = m.contract("Lock", [unlockTime], {
-    value: lockedAmount,
-  });
+  // Convert initialSupply to string explicitly
+  const initialSupplyValue = typeof initialSupply === 'string'
+    ? initialSupply
+    : DEFAULT_INITIAL_SUPPLY_STRING;
 
-  return { lock };
+  // Deploy the implementation contract
+  const token = m.contract("YKAToken");
+
+  // Initialize the contract with the initial supply and owner
+  m.call(token, "initialize", [parseEther(initialSupplyValue), initialOwner]);
+
+  // Return the contract instance
+  return { token };
 });
 
-export default LockModule;
+export default YKATokenModule;

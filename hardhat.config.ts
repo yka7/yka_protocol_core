@@ -2,6 +2,7 @@ import type { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem"; // Includes chai-matchers, network-helpers, verify, etc.
 import "@nomicfoundation/hardhat-ethers"; // Required by hardhat-upgrades
 import "@openzeppelin/hardhat-upgrades"; // For deploying upgradeable contracts
+import "@nomicfoundation/hardhat-ignition"; // For Ignition deployment framework
 import dotenv from "dotenv"; // To load environment variables for keys/endpoints
 import type { NetworkUserConfig } from "hardhat/types";
 
