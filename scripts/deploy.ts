@@ -24,7 +24,9 @@ async function main() {
   // Get the contract factory for YKAToken
   const ykaToken = await hre.viem.deployContract("YKAToken", [], {}); // Deploy the implementation contract first (no constructor args for proxy)
 
-  console.log(`YKAToken implementation deployed to: ${ykaToken.address}`);
+  console.log(
+    `YKAToken implementation deployed to: ${ykaToken.address}`
+  );
 
   // --- Deployment (Using Upgradeable Proxy - Recommended) ---
   // If you plan to upgrade the contract later, use a proxy.
@@ -39,7 +41,7 @@ async function main() {
   const ykaTokenProxy = await hre.upgrades.deployProxy(
     YKATokenFactory,
     [initialSupply, initialOwner], // Arguments for the initialize function
-    { initializer: "initialize", kind: "uups" } // Specify initializer and UUPS proxy kind
+    { initializer: 'initialize', kind: 'uups' } // Specify initializer and UUPS proxy kind
   );
 
   // Wait for the deployment transaction to be mined
@@ -49,17 +51,10 @@ async function main() {
 
   console.log("----------------------------------------------------");
   console.log(`YKAToken (Proxy) deployed to: ${proxyAddress}`);
-  console.log(
-    `Implementation contract address: ${await hre.upgrades.erc1967.getImplementationAddress(
-      proxyAddress
-    )}`
-  );
-  console.log(
-    `Admin contract address: ${await hre.upgrades.erc1967.getAdminAddress(
-      proxyAddress
-    )}`
-  );
+  console.log(`Implementation contract address: ${await hre.upgrades.erc1967.getImplementationAddress(proxyAddress)}`);
+  console.log(`Admin contract address: ${await hre.upgrades.erc1967.getAdminAddress(proxyAddress)}`);
   console.log("----------------------------------------------------");
+
 
   // --- Verification (Optional) ---
   // Wait for a few blocks to ensure Etherscan propagation if verifying immediately
