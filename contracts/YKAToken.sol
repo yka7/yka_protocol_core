@@ -112,7 +112,10 @@ contract YKAToken is
         internal
         override // Override the function from UUPSUpgradeable
         onlyOwner // Restrict access to the owner
-    {} // Empty implementation means only the owner can upgrade
+    {
+        // Empty implementation: the onlyOwner modifier is sufficient
+        // as it ensures only the owner can upgrade
+    }
 
     // --- Public/External Functions ---
 
