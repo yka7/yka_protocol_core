@@ -7,6 +7,7 @@ import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/
 import {ERC20BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol"; // Import UUPSUpgradeable
 
 /**
  * @title YKAToken
@@ -16,12 +17,14 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
  * - ERC20Permit: Allows approvals via signatures (gasless approvals).
  * - Ownable: Provides basic access control mechanism.
  * - Initializable: Designed for use with upgradeable proxies.
+ * - UUPSUpgradeable: Enables UUPS proxy pattern for upgrades.
  */
 contract YKAToken is
     Initializable, // Allows the contract to be initialized after deployment (for proxies)
     ERC20PermitUpgradeable, // Inherits ERC20 standard, adds permit functionality
     ERC20BurnableUpgradeable, // Adds burn functionality
-    OwnableUpgradeable // Adds ownership control
+    OwnableUpgradeable, // Adds ownership control
+    UUPSUpgradeable // Enables UUPS upgrade mechanism
 {
     // --- State Variables ---
 
@@ -41,6 +44,7 @@ contract YKAToken is
     /**
      * @notice Initializes the contract after deployment (for upgradeable proxies).
      * @dev Sets the token name, symbol, initial supply, and owner.
+     * Can only be called once.
      * @param _initialSupply The total amount of tokens to mint initially.
      * @param _initialOwner The address that will receive the initial supply and own the contract.
      */
@@ -53,22 +57,22 @@ contract YKAToken is
     {
         if (_initialOwner == address(0)) revert ZeroAddress();
 
-        // Initialize inherited contracts
+        // Initialize inherited contracts in the correct order
         __ERC20_init("YKA Token", "YKA"); // Set token name and symbol
+        __ERC20Permit_init("YKA Token"); // Initialize permit extension with the token name
         __ERC20Burnable_init(); // Initialize burnable extension
         __Ownable_init(_initialOwner); // Set the initial owner
-        __ERC20Permit_init("YKA Token"); // Initialize permit extension with the token name
+        __UUPSUpgradeable_init(); // Initialize UUPS upgradeable
 
-        // Mint the initial supply to the specified owner
+        // Mint initial supply to the owner
         _mint(_initialOwner, _initialSupply);
     }
 
     // --- Internal Functions ---
 
     /**
-     * @dev Overrides the default _update function to potentially add custom logic
-     * before token transfers, approvals, minting, or burning.
-     * Currently, it just calls the parent implementation.
+     * @dev Overrides the default _update function from both ERC20Upgradeable and ERC20PermitUpgradeable.
+     * This is necessary when inheriting from multiple contracts that define the same function.
      * @param from Sender address.
      * @param to Recipient address.
      * @param value Amount of tokens.
@@ -85,27 +89,30 @@ contract YKAToken is
     }
 
     /**
-     * @dev Hook that is called before any token transfer. This includes minting
-     * and burning.
-     *
-     * Requirements:
-     *
-     * - When `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * must be to `to`.
-     * - When `from` is zero, `amount` tokens must be minted to `to`.
-     * - When `to` is zero, `amount` of ``from``'s tokens must be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * NOTE: This function is internal and can be overridden by derived contracts.
-     * Currently, it does nothing beyond the standard ERC20 checks.
+     * @dev Hook that is called before any token transfer.
+     * (Inherited from ERC20Upgradeable)
+     * Currently, no additional logic is added here.
      */
     // function _beforeTokenTransfer(address from, address to, uint256 amount)
     //     internal
     //     override(ERC20Upgradeable)
     // {
     //     super._beforeTokenTransfer(from, to, amount);
-    //     // Add custom logic here if needed before transfers
+    //     // Add custom logic here if needed
     // }
+
+    // --- UUPS Upgrade Authorization ---
+
+    /**
+     * @dev Authorizes an upgrade to a new implementation contract.
+     * Only the current owner (as defined by OwnableUpgradeable) can authorize an upgrade.
+     * @param newImplementation The address of the new implementation contract.
+     */
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override // Override the function from UUPSUpgradeable
+        onlyOwner // Restrict access to the owner
+    {} // Empty implementation means only the owner can upgrade
 
     // --- Public/External Functions ---
 
@@ -113,12 +120,11 @@ contract YKAToken is
     // (Inherits burn functions from ERC20Burnable)
     // (Inherits permit function from ERC20Permit)
     // (Inherits ownership functions like transferOwnership, renounceOwnership from Ownable)
-
-    // --- Versioning for UUPS Proxy ---
-    // Required for UUPS upgradeability pattern
-    // function _authorizeUpgrade(address newImplementation) internal override onlyOwner {} // Uncomment and implement if using UUPS
+    // (Inherits upgrade functions like upgradeTo from UUPSUpgradeable)
 
     // --- Reserved Storage Space for Upgrades ---
     // Prevents storage collisions when upgrading
+    // The number of slots should be sufficient to avoid collisions with future inherited contracts.
+    // OpenZeppelin calculates this based on inheritance, but 50 is usually safe.
     uint256[49] private __gap; // Reserve storage slots for future upgrades
 }
