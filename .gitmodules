@@ -10,3 +10,6 @@
 [submodule "solmate"]
 	path = solmate
 	url = https://github.com/transmissions11/solmate
+[submodule "solidity-stringutils"]
+	path = solidity-stringutils
+	url = https://github.com/arachnid/solidity-stringutils
