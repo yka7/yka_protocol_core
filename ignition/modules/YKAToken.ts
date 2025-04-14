@@ -1,20 +1,17 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { parseEther } from "viem";
 
-/**
- * YKAToken deployment module
- * Deploys the YKAToken contract and initializes it with the provided parameters
- */
 const YKATokenModule = buildModule("YKATokenModule", (m) => {
-  // Deploy the implementation contract first
+  // Required parameter for initialOwner
+  const owner = m.getParameter<string>("initialOwner");
+
+  // Deploy the implementation contract
   const token = m.contract("YKAToken");
 
-  // Add initialization parameters as a second step
+  // Initialize with 1 million tokens
   m.call(token, "initialize", [
-    // Convert initial supply to wei (1 million tokens)
     parseEther("1000000"),
-    // Use the provided owner address from deployment parameters
-    m.getParameter<string>("initialOwner")
+    owner
   ]);
 
   return { token };
