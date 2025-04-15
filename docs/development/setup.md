@@ -4,8 +4,8 @@
 
 ### 1.1 ソフトウェア要件
 
-- Node.js v20.x 以上
-- npm v10.x 以上
+- Node.js v16.x 以上
+- npm v8.x 以上
 - Git
 
 ### 1.2 推奨開発環境
@@ -46,7 +46,10 @@ cp .env.example .env
 # .envファイルを編集
 # 以下の変数を設定:
 # - PRIVATE_KEY
-# - AVALANCHE_RPC_URL or POLYGON_RPC_URL
+# - AVALANCHE_RPC_URL
+# - AVALANCHE_FUJI_RPC_URL
+# - POLYGON_RPC_URL
+# - POLYGON_AMOY_RPC_URL
 # - ETHERSCAN_API_KEY
 ```
 
@@ -110,8 +113,11 @@ npm run lint
 # ローカルノードの起動
 npm run node
 
-# テストネットへのデプロイ
-npm run deploy:testnet
+# テストネットへのデプロイ（Polygon Amoy）
+npm run deploy:amoy
+
+# テストネットへのデプロイ（Avalanche Fuji）
+npm run deploy:fuji
 ```
 
 ## 6. テスト

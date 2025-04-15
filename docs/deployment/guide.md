@@ -39,8 +39,11 @@ ETHERSCAN_API_KEY=      # Etherscan API key
 # コントラクトのコンパイル
 npm run compile
 
-# テストネットへのデプロイ
-npm run deploy:testnet
+# Polygonテストネット（Amoy）へのデプロイ
+npm run deploy:amoy
+
+# Avalancheテストネット（Fuji）へのデプロイ
+npm run deploy:fuji
 ```
 
 ### 3.2 メインネットデプロイメント
@@ -74,6 +77,16 @@ networks: {
     url: process.env.POLYGON_RPC_URL,
     chainId: 137,
     accounts: [process.env.PRIVATE_KEY]
+  },
+  amoy: {
+    url: process.env.POLYGON_AMOY_RPC_URL,
+    chainId: 80002,
+    accounts: [process.env.PRIVATE_KEY]
+  },
+  fuji: {
+    url: process.env.AVALANCHE_FUJI_RPC_URL,
+    chainId: 43113,
+    accounts: [process.env.PRIVATE_KEY]
   }
 }
 ```
@@ -97,8 +110,11 @@ networks: {
 ### 6.1 コントラクト検証
 
 ```bash
-# コントラクトの検証
-npm run verify --network avalanche
+# コントラクトの検証（Polygon Amoy）
+npm run verify --network amoy
+
+# コントラクトの検証（Avalanche Fuji）
+npm run verify --network fuji
 ```
 
 ### 6.2 機能検証
