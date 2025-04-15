@@ -10,7 +10,7 @@ dotenv.config();
 
 // 環境変数が設定されていない場合のデフォルト値
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "0000000000000000000000000000000000000000000000000000000000000000";
-const MUMBAI_RPC_URL = process.env.MUMBAI_RPC_URL || "https://rpc-mumbai.maticvigil.com";
+const AMOY_RPC_URL = process.env.AMOY_RPC_URL || "https://rpc-amoy.polygon.technology";
 const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL || "https://polygon-rpc.com";
 const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY || "";
 
@@ -28,9 +28,9 @@ const config: HardhatUserConfig = {
     // ローカル開発用
     hardhat: {},
 
-    // Mumbaiテストネット
-    mumbai: {
-      url: MUMBAI_RPC_URL,
+    // テストネット
+    amoy: {
+      url: AMOY_RPC_URL,
       accounts: [PRIVATE_KEY],
       chainId: 80002,
     },

@@ -36,7 +36,7 @@ jobs:
         run: npm run test
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-          MUMBAI_RPC_URL: ${{ secrets.MUMBAI_RPC_URL }}
+          AMOY_RPC_URL: ${{ secrets.AMOY_RPC_URL }}
           POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
           POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
           REPORT_GAS: ${{ secrets.REPORT_GAS }}
@@ -45,11 +45,11 @@ jobs:
           MAX_SUPPLY: ${{ secrets.MAX_SUPPLY }}
           AIRDROP_AMOUNT: ${{ secrets.AIRDROP_AMOUNT }}
 
-      - name: Deploy to Mumbai
-        run: npm run deploy:mumbai
+      - name: Deploy to Amoy
+        run: npm run deploy:amoy
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-          MUMBAI_RPC_URL: ${{ secrets.MUMBAI_RPC_URL }}
+          AMOY_RPC_URL: ${{ secrets.AMOY_RPC_URL }}
           POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
           POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
           INITIAL_SUPPLY: ${{ secrets.INITIAL_SUPPLY }}

@@ -6,11 +6,11 @@
   "scripts": {
     "test": "hardhat test",
     "compile": "hardhat compile",
-    "deploy": "hardhat ignition deploy ./ignition/modules/YKAToken.ts --network mumbai",
+    "deploy": "hardhat ignition deploy ./ignition/modules/YKAToken.ts --network amoy",
     "deploy:localhost": "hardhat ignition deploy ./ignition/modules/YKAToken.ts --network localhost",
-    "deploy:mumbai": "hardhat ignition deploy ./ignition/modules/YKAToken.ts --network mumbai",
+    "deploy:amoy": "hardhat ignition deploy ./ignition/modules/YKAToken.ts --network amoy",
     "deploy:polygon": "hardhat ignition deploy ./ignition/modules/YKAToken.ts --network polygon",
-    "verify:mumbai": "hardhat verify --network mumbai DEPLOYED_PROXY_ADDRESS",
+    "verify:amoy": "hardhat verify --network amoy DEPLOYED_PROXY_ADDRESS",
     "verify:polygon": "hardhat verify --network polygon DEPLOYED_PROXY_ADDRESS",
     "lint": "solhint 'contracts/**/*.sol'",
     "coverage": "hardhat coverage"
