@@ -8,9 +8,9 @@ const YKATokenModule = buildModule("YKATokenModule", (m) => {
   // Deploy the implementation contract
   const token = m.contract("YKAToken");
 
-  // Initialize with 1 million tokens
+  // Initialize with same supply as test fixture (1 million tokens)
   m.call(token, "initialize", [
-    parseEther("1000000"),
+    parseEther("1000000"), // 1 million tokens (matching test fixture)
     owner
   ]);
 
