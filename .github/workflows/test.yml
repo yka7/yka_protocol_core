@@ -1,0 +1,60 @@
+name: Test CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests and Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0  # 完全な履歴を取得してカバレッジ比較を可能に
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.18.1'  # hardhat.ymlと同じバージョンを使用
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests with coverage
+      run: npm run coverage
+      env:
+        NODE_OPTIONS: "--max-old-space-size=4096"  # メモリ制限を緩和
+
+    - name: Generate coverage badge
+      run: |
+        COVERAGE=$(cat coverage/lcov.info | grep -E "SF:.+\.sol" -A 4 | grep "LF:" | awk '{sum+=$2} END {print sum}')
+        TOTAL=$(cat coverage/lcov.info | grep -E "SF:.+\.sol" -A 4 | grep "LH:" | awk '{sum+=$2} END {print sum}')
+        PERCENTAGE=$(awk "BEGIN { pc=100*${TOTAL}/${COVERAGE}; i=int(pc); print (pc-i<0.5)?i:i+1 }")
+        echo "COVERAGE_PERCENTAGE=$PERCENTAGE" >> $GITHUB_ENV
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage/lcov.info
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: unittests
+        name: codecov-umbrella
+        verbose: true
+
+    - name: Comment PR with Coverage Info
+      if: github.event_name == 'pull_request'
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        message: |
+          ### テストカバレッジレポート 📊
+
+          現在のカバレッジ: ${{ env.COVERAGE_PERCENTAGE }}%
+
+          詳細なレポートは [Codecov](${{ steps.codecov.outputs.url }}) で確認できます。
