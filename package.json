@@ -13,7 +13,7 @@
     "verify:amoy": "hardhat verify --network amoy DEPLOYED_PROXY_ADDRESS",
     "verify:polygon": "hardhat verify --network polygon DEPLOYED_PROXY_ADDRESS",
     "lint": "solhint 'contracts/**/*.sol'",
-    "coverage": "hardhat coverage"
+    "coverage": "SOLIDITY_COVERAGE=true hardhat coverage"
   },
   "keywords": [
     "blockchain",
