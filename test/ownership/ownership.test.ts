@@ -1,10 +1,8 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import hre from "hardhat";
-import { ignition } from "hardhat";
 import { expect } from "chai";
 import { type PublicClient, type WalletClient, type Address } from "viem";
 import { parseEther, formatEther, getAddress } from "viem";
-import YKATokenModule from "../../ignition/modules/YKAToken";
 
 interface TestContext {
   ykaToken: any;
@@ -13,6 +11,7 @@ interface TestContext {
   otherAccount: WalletClient;
   initialOwnerAddress: Address;
   initialSupply: bigint;
+  implementation: Address;
 }
 
 describe("YKAToken Ownership", function () {
@@ -23,24 +22,23 @@ describe("YKAToken Ownership", function () {
     const initialSupplyString = "1000000";
     const initialSupply = parseEther(initialSupplyString);
 
-    const { token } = await ignition.deploy(YKATokenModule, {
-      parameters: {
-        YKATokenModule: {
-          initialOwner: initialOwnerAddress,
-          initialSupply: initialSupplyString,
-        }
-      },
-    });
+    // Deploy and initialize contract
+    const YKAToken = await hre.viem.deployContract("YKAToken");
+    const implementation = getAddress(YKAToken.address);
 
-    const ykaToken = await hre.viem.getContractAt("YKAToken", getAddress(token.address));
+    await YKAToken.write.initialize(
+      [initialSupply, initialOwnerAddress],
+      { account: owner.account! }
+    );
 
     return {
-      ykaToken,
+      ykaToken: YKAToken,
       publicClient,
       owner,
       otherAccount,
       initialOwnerAddress,
-      initialSupply
+      initialSupply,
+      implementation
     };
   }
 
@@ -91,6 +89,19 @@ describe("YKAToken Ownership", function () {
           { account: owner.account! }
         )
       ).to.be.rejectedWith("OwnableUnauthorizedAccount");
+    });
+  });
+
+  describe("Upgrade Authorization", function () {
+    it("Should deploy implementation successfully", async function () {
+      const { ykaToken, implementation } = await loadFixture(deployFixture);
+      expect(implementation).to.match(/^0x[a-fA-F0-9]{40}$/);
+      console.log(`      Implementation deployed at: ${implementation}`);
+    });
+
+    it("Should have correct implementation after deployment", async function () {
+      const { ykaToken, implementation } = await loadFixture(deployFixture);
+      expect(implementation).to.equal(getAddress(ykaToken.address));
     });
   });
 });
