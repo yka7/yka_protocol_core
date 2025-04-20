@@ -3,6 +3,7 @@ import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomicfoundation/hardhat-ethers";
 import "@openzeppelin/hardhat-upgrades";
 import "@nomicfoundation/hardhat-ignition";
+import "@typechain/hardhat";
 import dotenv from "dotenv";
 
 // 環境変数の読み込み
@@ -23,6 +24,12 @@ const config: HardhatUserConfig = {
         runs: 200
       }
     }
+  },
+  paths: {
+    sources: "./contracts",
+    tests: "./test",
+    cache: "./cache",
+    artifacts: "./artifacts"
   },
   networks: {
     // ローカル開発用
@@ -53,7 +60,7 @@ const config: HardhatUserConfig = {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD",
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
-  }
+  },
 };
 
 export default config;

@@ -28,7 +28,15 @@ contract YKAToken is
 {
     // --- State Variables ---
 
-    // (No additional state variables needed beyond those inherited)
+    // Storage variables
+    uint256 internal _version;
+
+    /**
+     * @dev Returns the current version of the contract
+     */
+    function version() public virtual view returns (uint256) {
+        return _version;
+    }
 
     // --- Errors ---
 
@@ -53,6 +61,7 @@ contract YKAToken is
         address _initialOwner
     )
         public
+        virtual
         initializer // Modifier to ensure this function is called only once
     {
         if (_initialOwner == address(0)) revert ZeroAddress();
@@ -61,6 +70,8 @@ contract YKAToken is
         __ERC20_init("YKA Token", "YKA"); // Set token name and symbol
         __ERC20Permit_init("YKA Token"); // Initialize permit extension with the token name
         __ERC20Burnable_init(); // Initialize burnable extension
+        _version = 1; // Set initial version
+
         __Ownable_init(_initialOwner); // Set the initial owner
         __UUPSUpgradeable_init(); // Initialize UUPS upgradeable
 
