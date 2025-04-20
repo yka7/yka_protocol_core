@@ -1,7 +1,8 @@
 # 経済シミュレーションテスト仕様
 
 ## 概要
-YKAトークンの経済的な振る舞いを検証するシミュレーションテスト群です。
+
+YKA トークンの経済的な振る舞いを検証するシミュレーションテスト群です。
 実際の利用シナリオに基づいた動作確認を行います。
 
 ## テストケース
@@ -50,16 +51,19 @@ describe("Market Simulation", () => {
 ## 実装上の注意点
 
 ### 1. 初期配布処理
+
 - オーナーアカウントからの配布を確実に行う
 - 適切な残高確認を実施
 - イベント発行を確認
 
 ### 2. トレーダー間取引
+
 - 残高不足の確認
 - 承認額の確認
 - トランザクション完了の待機
 
 ### 3. 並行処理の扱い
+
 - トランザクションの順序制御
 - 適切なタイムアウト設定
 - エラーハンドリングの実装
@@ -67,19 +71,21 @@ describe("Market Simulation", () => {
 ## エラーケース
 
 1. **残高不足**
+
 ```typescript
 // 期待される動作
-- ERC20InsufficientBalanceエラーの発生
-- トランザクションのロールバック
-- 残高の変更なし
+-ERC20InsufficientBalanceエラーの発生 -
+  トランザクションのロールバック -
+  残高の変更なし;
 ```
 
 2. **承認不足**
+
 ```typescript
 // 期待される動作
-- ERC20InsufficientAllowanceエラーの発生
-- トランザクションのロールバック
-- アローワンスの変更なし
+-ERC20InsufficientAllowanceエラーの発生 -
+  トランザクションのロールバック -
+  アローワンスの変更なし;
 ```
 
 ## テスト実行方法
@@ -91,3 +97,4 @@ npm test test/economic/simulation.test.ts
 # 特定のテストケースの実行
 npm test test/economic/simulation.test.ts -g "Token Distribution"
 npm test test/economic/simulation.test.ts -g "Market Simulation"
+```

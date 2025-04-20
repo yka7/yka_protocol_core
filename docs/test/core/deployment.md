@@ -1,7 +1,8 @@
 # デプロイメントテスト仕様
 
 ## 概要
-YKAトークンの初期デプロイメントと基本的な設定を検証するテストスイートです。
+
+YKA トークンの初期デプロイメントと基本的な設定を検証するテストスイートです。
 
 ## テストケース
 
@@ -61,11 +62,12 @@ describe("Contract Settings", () => {
 ## 実装上の注意点
 
 ### 1. デプロイメントパラメータ
+
 ```typescript
 // デプロイメントパラメータの設定
 const deployParams = {
   initialOwner: owner.address,
-  initialSupply: "1000000"  // ETH単位
+  initialSupply: "1000000", // ETH単位
 };
 
 // パラメータ検証
@@ -75,12 +77,11 @@ expect(await token.decimals()).to.equal(18);
 ```
 
 ### 2. 初期供給量の検証
+
 ```typescript
 // 供給量の確認（Wei単位での計算）
 const totalSupply = await token.totalSupply();
-expect(totalSupply).to.equal(
-  parseEther(deployParams.initialSupply)
-);
+expect(totalSupply).to.equal(parseEther(deployParams.initialSupply));
 
 // オーナー残高の確認
 const ownerBalance = await token.balanceOf(owner.address);
@@ -88,11 +89,10 @@ expect(ownerBalance).to.equal(totalSupply);
 ```
 
 ### 3. 初期化保護
+
 ```typescript
 // 再初期化の試行
-await expect(
-  token.initialize(owner.address, "1000000")
-).to.be.revertedWith(
+await expect(token.initialize(owner.address, "1000000")).to.be.revertedWith(
   "Initializable: contract is already initialized"
 );
 ```
@@ -100,24 +100,21 @@ await expect(
 ## エラーケース
 
 ### 1. 不正な初期パラメータ
+
 ```typescript
 // ゼロアドレスオーナー
-await expect(
-  deployToken(ZERO_ADDRESS, "1000000")
-).to.be.reverted;
+await expect(deployToken(ZERO_ADDRESS, "1000000")).to.be.reverted;
 
 // 無効な初期供給量
-await expect(
-  deployToken(owner.address, "0")
-).to.be.reverted;
+await expect(deployToken(owner.address, "0")).to.be.reverted;
 ```
 
 ### 2. アップグレード保護
+
 ```typescript
 // 実装コントラクトの直接使用防止
-await expect(
-  token.connect(nonOwner).upgradeTo(newImplementation)
-).to.be.reverted;
+await expect(token.connect(nonOwner).upgradeTo(newImplementation)).to.be
+  .reverted;
 ```
 
 ## テスト実行方法

@@ -1,7 +1,8 @@
 # トークン転送テスト仕様
 
 ## 概要
-YKAトークンの基本的な転送機能を検証するテストスイートです。
+
+YKA トークンの基本的な転送機能を検証するテストスイートです。
 
 ## テストケース
 
@@ -56,6 +57,7 @@ describe("Batch Transfers", () => {
 ## 実装上の注意点
 
 ### 1. 残高確認
+
 ```typescript
 // 転送前後の残高チェック
 const beforeBalance = await token.balanceOf(sender);
@@ -65,22 +67,19 @@ expect(afterBalance).to.equal(beforeBalance - amount);
 ```
 
 ### 2. イベント検証
+
 ```typescript
 // Transfer イベントの確認
-expect(transfer)
-  .to.emit(token, "Transfer")
-  .withArgs(sender, recipient, amount);
+expect(transfer).to.emit(token, "Transfer").withArgs(sender, recipient, amount);
 ```
 
 ### 3. エラー処理
+
 ```typescript
 // 残高不足エラーの確認
 await expect(
   token.transfer(recipient, moreThanBalance)
-).to.be.revertedWithCustomError(
-  token,
-  "ERC20InsufficientBalance"
-);
+).to.be.revertedWithCustomError(token, "ERC20InsufficientBalance");
 ```
 
 ## テスト実行方法
@@ -91,3 +90,4 @@ npm test test/transaction/transfer.test.ts
 
 # 特定のテストケースの実行
 npm test test/transaction/transfer.test.ts -g "Basic Transfer"
+```

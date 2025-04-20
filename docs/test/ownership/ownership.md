@@ -1,27 +1,47 @@
 # オーナーシップテスト仕様
 
 ## 概要
-YKAトークンのオーナーシップ管理機能を検証するテストスイートです。
-Ownable2Stepアップグレード可能実装の正しい動作を確認します。
+
+YKA トークンのオーナーシップ管理機能を検証するテストスイートです。
+Ownable2Step アップグレード可能実装の正しい動作を確認します。
 
 ## テストケース
 
 ### 基本的なオーナーシップ管理
 
 ```typescript
-describe("Basic Ownership", () => {
-  it("Should set the correct initial owner")
-  // 初期オーナーの設定
+describe("Ownership Management", () => {
+  it("Should allow owner to transfer ownership")
+  // オーナーによる所有権移転
   検証項目：
-  - デプロイ時のオーナー設定
-  - オーナーアドレスの正確性
+  - オーナーによる移転実行
+  - 新オーナーの設定確認
+  - 移転完了のログ出力
 
-  it("Should prevent non-owners from owner actions")
-  // 非オーナーからの制限
+  it("Should prevent non-owner from transferring ownership")
+  // 非オーナーからの移転制限
   検証項目：
-  - 制限された操作の試行
-  - アクセス拒否の確認
-  - エラーメッセージの検証
+  - 非オーナーからの移転試行
+  - OwnableUnauthorizedAccountエラーの発生確認
+
+  it("Should emit OwnershipTransferred event")
+  // 所有権移転イベントの確認
+  検証項目：
+  - イベント発行の確認
+  - イベントの引数検証（前オーナー、新オーナー）
+  - 移転後の権限確認
+
+  it("Should prevent transfer to zero address")
+  // ゼロアドレスへの移転防止
+  検証項目：
+  - ゼロアドレスへの移転試行
+  - OwnableInvalidOwnerエラーの発生確認
+
+  it("Should handle transfer to same address")
+  // 同一アドレスへの移転
+  検証項目：
+  - 現オーナーアドレスへの移転
+  - エラーが発生しないことの確認
 ```
 
 ### オーナーシップ移転
@@ -63,6 +83,7 @@ describe("Edge Cases", () => {
 ## 実装上の注意点
 
 ### 1. オーナー確認
+
 ```typescript
 // オーナーの検証
 const currentOwner = await token.owner();
@@ -70,6 +91,7 @@ expect(currentOwner).to.equal(expectedOwner);
 ```
 
 ### 2. 移転プロセスの検証
+
 ```typescript
 // 二段階移転の実装
 await token.transferOwnership(newOwner);
@@ -81,6 +103,7 @@ expect(updatedOwner).to.equal(newOwner);
 ```
 
 ### 3. イベント検証
+
 ```typescript
 // OwnershipTransferStarted イベントの確認
 expect(transfer)
@@ -96,22 +119,19 @@ expect(accept)
 ## エラーケース
 
 ### 1. アクセス制御
+
 ```typescript
 // 非オーナーからの操作防止
 await expect(
   token.connect(nonOwner).transferOwnership(newOwner)
-).to.be.revertedWithCustomError(
-  token,
-  "OwnableUnauthorizedAccount"
-);
+).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
 ```
 
 ### 2. 無効な移転
+
 ```typescript
 // 未提案の承認試行
-await expect(
-  token.connect(nonOwner).acceptOwnership()
-).to.be.reverted;
+await expect(token.connect(nonOwner).acceptOwnership()).to.be.reverted;
 ```
 
 ## テスト実行方法
@@ -123,3 +143,4 @@ npm test test/ownership/ownership.test.ts
 # 特定のテストケースの実行
 npm test test/ownership/ownership.test.ts -g "Basic Ownership"
 npm test test/ownership/ownership.test.ts -g "Ownership Transfer"
+```

@@ -1,7 +1,8 @@
 # トークン承認テスト仕様
 
 ## 概要
-YKAトークンの承認（Approval）機能とtransferFrom機能を検証するテストスイートです。
+
+YKA トークンの承認（Approval）機能と transferFrom 機能を検証するテストスイートです。
 
 ## テストケース
 
@@ -24,7 +25,7 @@ describe("Token Approvals", () => {
   - イベントの発行確認
 ```
 
-### TransferFrom機能
+### TransferFrom 機能
 
 ```typescript
 describe("TransferFrom Operations", () => {
@@ -63,13 +64,15 @@ describe("Allowance Management", () => {
 ## 実装上の注意点
 
 ### 1. 承認額の検証
+
 ```typescript
 // アローワンスの確認
 const allowance = await token.allowance(owner, spender);
 expect(allowance).to.equal(amount);
 ```
 
-### 2. TransferFrom検証
+### 2. TransferFrom 検証
+
 ```typescript
 // transferFromの実行と検証
 await token.connect(spender).transferFrom(owner, recipient, amount);
@@ -79,32 +82,28 @@ expect(newAllowance).to.equal(allowance - amount);
 ```
 
 ### 3. イベント検証
+
 ```typescript
 // Approval イベントの確認
-expect(approve)
-  .to.emit(token, "Approval")
-  .withArgs(owner, spender, amount);
+expect(approve).to.emit(token, "Approval").withArgs(owner, spender, amount);
 ```
 
 ## エラーケース
 
 ### 1. 承認額超過
+
 ```typescript
 // 承認額以上の転送試行
 await expect(
   token.connect(spender).transferFrom(owner, recipient, moreThanAllowed)
-).to.be.revertedWithCustomError(
-  token,
-  "ERC20InsufficientAllowance"
-);
+).to.be.revertedWithCustomError(token, "ERC20InsufficientAllowance");
 ```
 
 ### 2. 無効なアドレス
+
 ```typescript
 // ゼロアドレスへの承認防止
-await expect(
-  token.approve(ZERO_ADDRESS, amount)
-).to.be.reverted;
+await expect(token.approve(ZERO_ADDRESS, amount)).to.be.reverted;
 ```
 
 ## テスト実行方法
@@ -116,3 +115,4 @@ npm test test/transaction/approval.test.ts
 # 特定のテストケースの実行
 npm test test/transaction/approval.test.ts -g "Token Approvals"
 npm test test/transaction/approval.test.ts -g "TransferFrom Operations"
+```
