@@ -17,14 +17,29 @@ contract YKAGovernanceImpl is GovernorCountingSimpleUpgradeable, YKAGovernance {
         address _token,
         address _timelock
     ) public override initializer {
-        // Initialize all parent contracts in the correct order
-        __Governor_init("YKAGovernance");
+        // Initialize YKAGovernance
+        YKAGovernance.initialize(_token, _timelock);
+
+        // Initialize GovernorCountingSimple
         __GovernorCountingSimple_init();
-        __GovernorVotes_init(IVotesUpgradeable(_token));
-        __GovernorTimelockControl_init(
-            TimelockControllerUpgradeable(payable(_timelock))
-        );
-        __UUPSUpgradeable_init();
+    }
+
+    function votingDelay() public pure override(IGovernorUpgradeable, YKAGovernance) returns (uint256) {
+        return 1; // 1ブロック
+    }
+
+    function votingPeriod() public pure override(IGovernorUpgradeable, YKAGovernance) returns (uint256) {
+        return 5; // 5ブロック（テスト用に短く設定）
+    }
+
+    // クォーラム（定足数）を設定
+    function quorum(uint256) public pure override(IGovernorUpgradeable, YKAGovernance) returns (uint256) {
+        return 10 * 10**18; // 10トークン（テスト用に小さく設定）
+    }
+
+    // 提案の最小閾値を設定
+    function proposalThreshold() public pure override returns (uint256) {
+        return 1 * 10**18; // 1トークン（テスト用に小さく設定）
     }
 
     // COUNTING_MODE must be defined as pure.
@@ -34,7 +49,7 @@ contract YKAGovernanceImpl is GovernorCountingSimpleUpgradeable, YKAGovernance {
         override(GovernorCountingSimpleUpgradeable, IGovernorUpgradeable)
         returns (string memory)
     {
-        return "support=bravo";
+        return "support=bravo&quorum=for,abstain";
     }
 
     // Override _quorumReached with actual implementation
@@ -67,11 +82,6 @@ contract YKAGovernanceImpl is GovernorCountingSimpleUpgradeable, YKAGovernance {
         return super.hasVoted(proposalId, account);
     }
 
-    // Provide a concrete proposalThreshold
-    function proposalThreshold() public pure override returns (uint256) {
-        return 1000e18; // 1000 tokens
-    }
-
     // Override _cancel required by base contracts
     function _cancel(
         address[] memory targets,
@@ -79,7 +89,7 @@ contract YKAGovernanceImpl is GovernorCountingSimpleUpgradeable, YKAGovernance {
         bytes[] memory calldatas,
         bytes32 descriptionHash
     ) internal override(GovernorUpgradeable, YKAGovernance) returns (uint256) {
-        return YKAGovernance._cancel(targets, values, calldatas, descriptionHash);
+        return super._cancel(targets, values, calldatas, descriptionHash);
     }
 
     // Override _execute required by base contracts
@@ -90,7 +100,7 @@ contract YKAGovernanceImpl is GovernorCountingSimpleUpgradeable, YKAGovernance {
         bytes[] memory calldatas,
         bytes32 descriptionHash
     ) internal override(GovernorUpgradeable, YKAGovernance) {
-        YKAGovernance._execute(proposalId, targets, values, calldatas, descriptionHash);
+        super._execute(proposalId, targets, values, calldatas, descriptionHash);
     }
 
     // Override _executor required by base contracts
@@ -100,7 +110,7 @@ contract YKAGovernanceImpl is GovernorCountingSimpleUpgradeable, YKAGovernance {
         override(GovernorUpgradeable, YKAGovernance)
         returns (address)
     {
-        return YKAGovernance._executor();
+        return super._executor();
     }
 
     // Override castVoteWithReason required by base contracts
@@ -109,7 +119,7 @@ contract YKAGovernanceImpl is GovernorCountingSimpleUpgradeable, YKAGovernance {
         uint8 support,
         string calldata reason
     ) public override(GovernorUpgradeable, YKAGovernance) returns (uint256) {
-        return YKAGovernance.castVoteWithReason(proposalId, support, reason);
+        return super.castVoteWithReason(proposalId, support, reason);
     }
 
     // Override propose required by base contracts
@@ -119,7 +129,7 @@ contract YKAGovernanceImpl is GovernorCountingSimpleUpgradeable, YKAGovernance {
         bytes[] memory calldatas,
         string memory description
     ) public override(GovernorUpgradeable, YKAGovernance) returns (uint256) {
-        return YKAGovernance.propose(targets, values, calldatas, description);
+        return super.propose(targets, values, calldatas, description);
     }
 
     // Override state required by base contracts
@@ -129,7 +139,7 @@ contract YKAGovernanceImpl is GovernorCountingSimpleUpgradeable, YKAGovernance {
         override(GovernorUpgradeable, YKAGovernance)
         returns (ProposalState)
     {
-        return YKAGovernance.state(proposalId);
+        return super.state(proposalId);
     }
 
     // Override supportsInterface required by base contracts
@@ -139,6 +149,6 @@ contract YKAGovernanceImpl is GovernorCountingSimpleUpgradeable, YKAGovernance {
         override(GovernorUpgradeable, YKAGovernance)
         returns (bool)
     {
-        return YKAGovernance.supportsInterface(interfaceId);
+        return super.supportsInterface(interfaceId);
     }
 }

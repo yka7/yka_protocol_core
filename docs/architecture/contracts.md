@@ -163,3 +163,138 @@ error ZeroAddress();  // ゼロアドレスエラー
 2. アップグレード操作の実行
 3. 新機能の検証
 4. ストレージの整合性確認
+
+## 6. ガバナンス機能仕様
+
+### 6.1 YKAGovernance コントラクト仕様
+
+#### 基本情報
+- コントラクト: YKAGovernance.sol, YKAGovernanceImpl.sol
+- 継承コントラクト:
+  - Initializable
+  - GovernorUpgradeable
+  - GovernorVotesUpgradeable
+  - GovernorTimelockControlUpgradeable
+  - GovernorCountingSimpleUpgradeable
+  - UUPSUpgradeable
+
+#### 主要パラメータ
+```solidity
+votingDelay(): 1 block    // 提案から投票開始までの遅延
+votingPeriod(): 5 blocks  // 投票期間
+quorum(): 10 tokens       // 最小投票数
+proposalThreshold(): 1 token  // 提案に必要な最小トークン量
+```
+
+### 6.2 主要機能
+
+#### 提案機能
+```solidity
+function propose(
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    string memory description
+) public override returns (uint256)
+```
+- 目的：新しい提案の作成
+- アクセス制御：提案閾値以上のトークンを保有するアカウント
+- パラメータ：
+  - targets: 実行対象のコントラクトアドレス
+  - values: 送金額
+  - calldatas: 実行データ
+  - description: 提案の説明
+
+#### 投票機能
+```solidity
+function castVote(uint256 proposalId, uint8 support) public returns (uint256)
+function castVoteWithReason(uint256 proposalId, uint8 support, string calldata reason) public returns (uint256)
+```
+- 目的：提案への投票
+- アクセス制御：投票権を持つアカウント
+- 投票オプション：賛成(1)、反対(0)、棄権(2)
+
+#### 実行機能
+```solidity
+function queue(
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    bytes32 descriptionHash
+) public returns (uint256)
+
+function execute(
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    bytes32 descriptionHash
+) public payable returns (uint256)
+```
+- 目的：成功した提案の実行
+- 実行フロー：
+  1. 提案のキュー登録
+  2. タイムロック期間の待機
+  3. 提案の実行
+
+### 6.3 セキュリティ機能
+
+#### アクセス制御
+- 提案作成：提案閾値以上のトークン保有者
+- 投票：投票権を持つアカウント
+- 実行：誰でも可能（タイムロック後）
+
+#### タイムロック
+- 目的：提案実行前の待機期間の強制
+- 期間：最小1ブロック（設定可能）
+- 機能：セキュリティと透明性の確保
+
+#### アップグレード保護
+```solidity
+function _authorizeUpgrade(address newImplementation) internal override
+```
+- 目的：コントラクトの安全なアップグレード
+- アクセス制御：ガバナンスシステムを通じてのみ可能
+
+### 6.4 状態管理
+
+#### 提案の状態
+```solidity
+enum ProposalState {
+    Pending,    // 0: 待機中
+    Active,     // 1: 投票中
+    Canceled,   // 2: キャンセル済
+    Defeated,   // 3: 否決
+    Succeeded,  // 4: 成功
+    Queued,     // 5: キュー済
+    Expired,    // 6: 期限切れ
+    Executed    // 7: 実行済
+}
+```
+
+#### 投票の追跡
+```solidity
+struct ProposalVote {
+    uint256 againstVotes;
+    uint256 forVotes;
+    uint256 abstainVotes;
+}
+```
+
+### 6.5 テスト要件
+
+#### 基本機能テスト
+- 提案作成と状態遷移
+- 投票メカニズム
+- クォーラム達成の確認
+- 実行フローの検証
+
+#### セキュリティテスト
+- アクセス制御の検証
+- タイムロックの動作確認
+- 不正な操作の防止
+- アップグレード機能の保護
+
+#### 統合テスト
+- トークンとの連携
+- タイムロックコントローラーとの連携
+- 完全な提案-実行フローの検証
