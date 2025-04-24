@@ -32,35 +32,22 @@ const config: HardhatUserConfig = {
     artifacts: "./artifacts"
   },
   networks: {
-    // ローカル開発用
     hardhat: {},
-
-    // テストネット
     amoy: {
       url: AMOY_RPC_URL,
       accounts: [PRIVATE_KEY],
       chainId: 80002,
     },
-
-    // Polygonメインネット（将来的な使用のため）
     polygon: {
       url: POLYGON_RPC_URL,
       accounts: [PRIVATE_KEY],
       chainId: 137,
     }
   },
-
-  // コントラクト検証用の設定
-  sourcify: {
-    enabled: true
-  },
-
-  // ガス設定（オプション）
-  gasReporter: {
-    enabled: process.env.REPORT_GAS !== undefined,
-    currency: "USD",
-    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
-  },
+  typechain: {
+    outDir: "typechain-types",
+    target: "ethers-v6" // targetをethers-v6に戻す
+  }
 };
 
 export default config;

@@ -22,6 +22,6 @@ contract MockYKATokenV2 is YKAToken {
         address _initialOwner
     ) public virtual override initializer {
         super.initialize(_initialSupply, _initialOwner);
-        _version = 2; // Set initial version to 2 for V2
+        _version = 2; // Set version to 2 for V2
     }
 }

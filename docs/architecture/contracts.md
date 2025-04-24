@@ -9,8 +9,10 @@
 - コントラクト: YKAToken.sol
 - 継承コントラクト:
   - Initializable
+  - ERC20Upgradeable
   - ERC20PermitUpgradeable
   - ERC20BurnableUpgradeable
+  - ERC20VotesUpgradeable
   - OwnableUpgradeable
   - UUPSUpgradeable
 
@@ -48,6 +50,11 @@ function initialize(uint256 _initialSupply, address _initialOwner) public initia
 - allowance: 許可額の照会
 
 ### 2.3 拡張機能
+
+#### 投票機能（ERC20Votes）
+
+- 委任機能：`delegate(address delegatee)`
+- 投票権照会：`getVotes(address account)`
 
 #### Permit 機能
 
@@ -117,28 +124,29 @@ error ZeroAddress();  // ゼロアドレスエラー
 ## 4. テスト仕様
 
 ### 4.1 必須テストケース
+### 4.1 初期化テスト
 
-1. 初期化テスト
+- 正常系：適切なパラメータでの初期化
+- 異常系：不正なパラメータ、重複初期化
 
-   - 正常系：適切なパラメータでの初期化
-   - 異常系：不正なパラメータ、重複初期化
+### 4.2 標準機能テスト
 
-2. 標準機能テスト
+- transfer 操作の検証
+- approve/transferFrom 操作の検証
+- balanceOf/allowance 照会の検証
 
-   - transfer 操作の検証
-   - approve/transferFrom 操作の検証
-   - balanceOf/allowance 照会の検証
+### 4.3 拡張機能テスト
 
-3. 拡張機能テスト
+- permit による承認の検証
+- バーン操作の検証
+- 投票権委任の検証
+- アップグレード操作の検証
 
-   - permit による承認の検証
-   - バーン操作の検証
-   - アップグレード操作の検証
+### 4.4 セキュリティテスト
 
-4. セキュリティテスト
-   - アクセス制御の検証
-   - エラー処理の検証
-   - ストレージレイアウトの検証
+- アクセス制御の検証
+- エラー処理の検証
+- ストレージレイアウトの検証
 
 ## 5. デプロイメント仕様
 

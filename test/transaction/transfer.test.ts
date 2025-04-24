@@ -83,7 +83,7 @@ describe("YKAToken Transactions: Transfer", function () {
         ykaToken.write.transfer([zeroAddress, amount], {
           account: owner.account!,
         })
-      ).to.be.rejectedWith("ERC20InvalidReceiver");
+      ).to.be.rejectedWith("ERC20: transfer to the zero address");
     });
   });
 

@@ -113,7 +113,7 @@ describe("YKAToken Transactions: Approval", function () {
           [initialOwnerAddress, otherAccountAddress, excessAmount],
           { account: otherAccount.account! }
         )
-      ).to.be.rejectedWith(/ERC20InsufficientAllowance|transfer amount exceeds allowance/);
+      ).to.be.rejectedWith(/ERC20InsufficientAllowance/);
     });
   });
 });

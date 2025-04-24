@@ -65,7 +65,7 @@ describe("YKAToken Ownership", function () {
 
       await expect(
         ykaToken.connect(otherAccount).transferOwnership(nonOwnerAddress)
-      ).to.be.revertedWithCustomError(ykaToken, "OwnableUnauthorizedAccount");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it("Should emit OwnershipTransferred event", async function () {
@@ -80,7 +80,7 @@ describe("YKAToken Ownership", function () {
 
       await expect(
         ykaToken.connect(owner).transferOwnership(initialOwnerAddress)
-      ).to.be.revertedWithCustomError(ykaToken, "OwnableUnauthorizedAccount");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it("Should prevent transfer to zero address", async function () {
@@ -89,7 +89,7 @@ describe("YKAToken Ownership", function () {
 
       await expect(
         ykaToken.connect(owner).transferOwnership(zeroAddress)
-      ).to.be.revertedWithCustomError(ykaToken, "OwnableInvalidOwner");
+      ).to.be.revertedWith("Ownable: new owner is the zero address");
     });
 
     it("Should handle transfer to same address", async function () {
@@ -151,7 +151,7 @@ describe("YKAToken Ownership", function () {
 
       await expect(
         upgrades.upgradeProxy(await ykaToken.getAddress(), YKATokenV2Factory)
-      ).to.be.revertedWithCustomError(ykaToken, "OwnableUnauthorizedAccount");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it("Should preserve state after upgrade", async function () {

@@ -19,14 +19,13 @@ describe("YKAToken Core: Deployment", function () {
     const [owner] = await hre.viem.getWalletClients();
     const initialOwnerAddress = getAddress(owner.account.address);
     const publicClient = await hre.viem.getPublicClient();
-    const initialSupplyString = "1000000";
-    const initialSupply = parseEther(initialSupplyString);
+    const initialSupply = parseEther("1000000");
 
     const { token } = await ignition.deploy(YKATokenModule, {
       parameters: {
         YKATokenModule: {
           initialOwner: initialOwnerAddress,
-          initialSupply: initialSupplyString,
+          initialSupply: "1000000",
         }
       },
     });
@@ -67,7 +66,7 @@ describe("YKAToken Core: Deployment", function () {
 
       await expect(
         ykaToken.write.initialize([initialSupply, owner.account!.address], { account: owner.account! })
-      ).to.be.rejectedWith("InvalidInitialization");
+      ).to.be.rejectedWith("Initializable: contract is already initialized");
     });
   });
 });

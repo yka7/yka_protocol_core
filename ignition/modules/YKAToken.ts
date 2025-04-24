@@ -1,16 +1,27 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { parseEther } from "viem";
 
+interface ModuleParameterRuntimeValue {
+  moduleId: string;
+  name: string;
+  defaultValue: any;
+  type: string;
+}
+
 const YKATokenModule = buildModule("YKATokenModule", (m) => {
-  // Required parameter for initialOwner
+  // Get required parameters
   const owner = m.getParameter<string>("initialOwner");
+  const initialSupplyParam = m.getParameter<string>("initialSupply");
 
   // Deploy the implementation contract
   const token = m.contract("YKAToken");
 
-  // Initialize with same supply as test fixture (1 million tokens)
+  // Extract value from parameter
+  const supplyValue = (initialSupplyParam as unknown as ModuleParameterRuntimeValue).defaultValue || "1000000";
+
+  // Initialize with validated parameters
   m.call(token, "initialize", [
-    parseEther("1000000"), // 1 million tokens (matching test fixture)
+    parseEther(String(supplyValue)),
     owner
   ]);
 
