@@ -153,6 +153,62 @@ contract YKAToken is
     // (Inherits ownership functions like transferOwnership, renounceOwnership from OwnableUpgradeable)
     // (Inherits upgrade functions like upgradeTo from UUPSUpgradeable)
 
+    // --- Polygon Optimized Functions ---
+
+    /**
+     * @dev Performs multiple token transfers in a single transaction.
+     * This is gas-efficient for batch operations on Polygon.
+     * @param recipients Array of recipient addresses
+     * @param amounts Array of amounts to transfer
+     */
+    function batchTransfer(
+        address[] calldata recipients,
+        uint256[] calldata amounts
+    ) external returns (bool) {
+        uint256 length = recipients.length;
+        if (length == 0 || length != amounts.length) revert();
+
+        for (uint256 i = 0; i < length;) {
+            address recipient = recipients[i];
+            uint256 amount = amounts[i];
+            if (recipient == address(0)) revert ZeroAddress();
+            _transfer(_msgSender(), recipient, amount);
+            unchecked { ++i; }
+        }
+
+        return true;
+    }
+
+    /**
+     * @dev Performs multiple token transfers from a specified account in a single transaction.
+     * Requires approval. Gas-efficient for batch operations.
+     * @param sender Address to transfer tokens from
+     * @param recipients Array of recipient addresses
+     * @param amounts Array of amounts to transfer
+     */
+    function batchTransferFrom(
+        address sender,
+        address[] calldata recipients,
+        uint256[] calldata amounts
+    ) external returns (bool) {
+        uint256 length = recipients.length;
+        if (length == 0 || length != amounts.length) revert();
+
+        for (uint256 i = 0; i < length;) {
+            address recipient = recipients[i];
+            uint256 amount = amounts[i];
+            if (recipient == address(0)) revert ZeroAddress();
+
+            uint256 currentAllowance = allowance(sender, _msgSender());
+            if (currentAllowance < amount) revert ERC20InsufficientAllowance();
+
+            _transfer(sender, recipient, amount);
+            unchecked { ++i; }
+        }
+
+        return true;
+    }
+
     // --- Reserved Storage Space for Upgrades ---
     // Prevents storage collisions when upgrading
     // The number of slots should be sufficient to avoid collisions with future inherited contracts.
