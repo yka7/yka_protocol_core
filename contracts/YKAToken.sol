@@ -52,6 +52,10 @@ contract YKAToken is
     error OwnableInvalidOwner(address owner);
     /// @dev Error thrown when transfer amount exceeds allowance.
     error ERC20InsufficientAllowance();
+    /// @dev Error thrown when transfer amount exceeds balance.
+    error ERC20InsufficientBalance();
+    /// @dev Error thrown when batch operation parameters are invalid.
+    error BatchParamsInvalid();
 
     // --- Initializer ---
 
@@ -158,6 +162,7 @@ contract YKAToken is
     /**
      * @dev Performs multiple token transfers in a single transaction.
      * This is gas-efficient for batch operations on Polygon.
+     * Automatically creates checkpoints for large batches.
      * @param recipients Array of recipient addresses
      * @param amounts Array of amounts to transfer
      */
@@ -166,22 +171,47 @@ contract YKAToken is
         uint256[] calldata amounts
     ) external returns (bool) {
         uint256 length = recipients.length;
-        if (length == 0 || length != amounts.length) revert();
+        if (length == 0 || length != amounts.length) revert BatchParamsInvalid();
 
+        address sender = _msgSender();
+        uint256 totalAmount;
+
+        // Calculate total amount efficiently using assembly
+        assembly {
+            let i := 0
+            let amountsOffset := amounts.offset
+            for {} lt(i, length) {} {
+                totalAmount := add(totalAmount, calldataload(add(amountsOffset, mul(i, 0x20))))
+                i := add(i, 1)
+            }
+        }
+
+        // Check balance once for all transfers
+        if (balanceOf(sender) < totalAmount) revert ERC20InsufficientBalance();
+
+        // Perform transfers
         for (uint256 i = 0; i < length;) {
             address recipient = recipients[i];
-            uint256 amount = amounts[i];
             if (recipient == address(0)) revert ZeroAddress();
-            _transfer(_msgSender(), recipient, amount);
+            _transfer(sender, recipient, amounts[i]);
             unchecked { ++i; }
+
+            // Emit progress every 100 transfers for large batches
+            if (i > 0 && i % 100 == 0 && i < length) {
+                emit BatchProcessed(i, length);
+            }
         }
 
         return true;
     }
 
+    /// @dev Emitted when a batch processing checkpoint is reached
+    event BatchProcessed(uint256 processed, uint256 total);
+
     /**
      * @dev Performs multiple token transfers from a specified account in a single transaction.
      * Requires approval. Gas-efficient for batch operations.
+     * Includes checkpoint functionality for large batches.
      * @param sender Address to transfer tokens from
      * @param recipients Array of recipient addresses
      * @param amounts Array of amounts to transfer
@@ -192,19 +222,40 @@ contract YKAToken is
         uint256[] calldata amounts
     ) external returns (bool) {
         uint256 length = recipients.length;
-        if (length == 0 || length != amounts.length) revert();
+        if (length == 0 || length != amounts.length) revert BatchParamsInvalid();
 
+        address spender = _msgSender();
+        uint256 totalAmount;
+
+        // Calculate total amount efficiently using assembly
+        assembly {
+            let i := 0
+            let amountsOffset := amounts.offset
+            for {} lt(i, length) {} {
+                totalAmount := add(totalAmount, calldataload(add(amountsOffset, mul(i, 0x20))))
+                i := add(i, 1)
+            }
+        }
+
+        // Check allowance and balance once for total amount
+        if (allowance(sender, spender) < totalAmount) revert ERC20InsufficientAllowance();
+        if (balanceOf(sender) < totalAmount) revert ERC20InsufficientBalance();
+
+        // Perform transfers
         for (uint256 i = 0; i < length;) {
             address recipient = recipients[i];
-            uint256 amount = amounts[i];
             if (recipient == address(0)) revert ZeroAddress();
-
-            uint256 currentAllowance = allowance(sender, _msgSender());
-            if (currentAllowance < amount) revert ERC20InsufficientAllowance();
-
-            _transfer(sender, recipient, amount);
+            _transfer(sender, recipient, amounts[i]);
             unchecked { ++i; }
+
+            // Emit progress every 100 transfers for large batches
+            if (i > 0 && i % 100 == 0 && i < length) {
+                emit BatchProcessed(i, length);
+            }
         }
+
+        // Update allowance once
+        _approve(sender, spender, allowance(sender, spender) - totalAmount);
 
         return true;
     }
