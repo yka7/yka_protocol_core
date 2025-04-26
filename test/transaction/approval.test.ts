@@ -1,119 +1,71 @@
-import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
-import hre from "hardhat";
-import { ignition } from "hardhat";
-import { expect } from "chai";
-import { type PublicClient, type WalletClient, type Address } from "viem";
-import { parseEther, formatEther, getAddress } from "viem";
-import YKATokenModule from "../../ignition/modules/YKAToken";
-
-interface TestContext {
-  ykaToken: any;
-  publicClient: PublicClient;
-  owner: WalletClient;
-  otherAccount: WalletClient;
-  initialOwnerAddress: Address;
-  initialSupply: bigint;
-}
+import { expect } from "../helpers/setup";
+import { ethers, upgrades } from "hardhat";
+import { YKAToken } from "../../typechain-types";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("YKAToken Transactions: Approval", function () {
-  async function deployFixture(): Promise<TestContext> {
-    const [owner, otherAccount] = await hre.viem.getWalletClients();
-    const initialOwnerAddress = getAddress(owner.account.address);
-    const publicClient = await hre.viem.getPublicClient();
-    const initialSupplyString = "1000000";
-    const initialSupply = parseEther(initialSupplyString);
+  let token: YKAToken;
+  let owner: SignerWithAddress;
+  let otherAccount: SignerWithAddress;
+  const initialSupply = ethers.parseEther("1000000");
 
-    const { token } = await ignition.deploy(YKATokenModule, {
-      parameters: {
-        YKATokenModule: {
-          initialOwner: initialOwnerAddress,
-          initialSupply: initialSupplyString,
-        }
-      },
-    });
+  beforeEach(async function () {
+    [owner, otherAccount] = await ethers.getSigners();
 
-    const ykaToken = await hre.viem.getContractAt("YKAToken", getAddress(token.address));
-
-    return {
-      ykaToken,
-      publicClient,
-      owner,
-      otherAccount,
-      initialOwnerAddress,
-      initialSupply
-    };
-  }
+    const YKATokenFactory = await ethers.getContractFactory("YKAToken");
+    token = await upgrades.deployProxy(YKATokenFactory, [
+      initialSupply,
+      owner.address
+    ]) as YKAToken;
+    await token.waitForDeployment();
+  });
 
   describe("Approval Operations", function () {
     it("Should handle approvals and transferFrom", async function () {
-      const { ykaToken, publicClient, owner, otherAccount, initialSupply, initialOwnerAddress } = await loadFixture(deployFixture);
-      const otherAccountAddress = getAddress(otherAccount.account!.address);
-      const amountToApprove = parseEther("200");
-      const amountToTransfer = parseEther("150");
+      const amountToApprove = ethers.parseEther("200");
+      const amountToTransfer = ethers.parseEther("150");
 
       // 承認を実行
-      const approveHash = await ykaToken.write.approve(
-        [otherAccountAddress, amountToApprove],
-        { account: owner.account! }
-      );
-      await publicClient.waitForTransactionReceipt({ hash: approveHash });
+      await expect(token.approve(otherAccount.address, amountToApprove))
+        .to.emit(token, "Approval")
+        .withArgs(owner.address, otherAccount.address, amountToApprove);
 
       // 承認額を確認
-      const allowance = await ykaToken.read.allowance([initialOwnerAddress, otherAccountAddress]);
+      const allowance = await token.allowance(owner.address, otherAccount.address);
       expect(allowance).to.equal(amountToApprove);
 
       // transferFromを実行
-      const transferFromHash = await ykaToken.write.transferFrom(
-        [initialOwnerAddress, otherAccountAddress, amountToTransfer],
-        { account: otherAccount.account! }
-      );
-      await publicClient.waitForTransactionReceipt({ hash: transferFromHash });
+      await expect(token.connect(otherAccount).transferFrom(owner.address, otherAccount.address, amountToTransfer))
+        .to.emit(token, "Transfer")
+        .withArgs(owner.address, otherAccount.address, amountToTransfer);
 
       // 残高を確認
-      const ownerBalanceAfter = await ykaToken.read.balanceOf([initialOwnerAddress]);
-      const otherAccountBalanceAfter = await ykaToken.read.balanceOf([otherAccountAddress]);
-
-      expect(ownerBalanceAfter).to.equal(initialSupply - amountToTransfer);
-      expect(otherAccountBalanceAfter).to.equal(amountToTransfer);
+      expect(await token.balanceOf(otherAccount.address)).to.equal(amountToTransfer);
+      expect(await token.balanceOf(owner.address)).to.equal(initialSupply - amountToTransfer);
 
       // 残りの承認額を確認
-      const remainingAllowance = await ykaToken.read.allowance([initialOwnerAddress, otherAccountAddress]);
-      expect(remainingAllowance).to.equal(amountToApprove - amountToTransfer);
+      expect(await token.allowance(owner.address, otherAccount.address)).to.equal(amountToApprove - amountToTransfer);
     });
 
     it("Should handle allowance limits correctly", async function () {
-      const { ykaToken, owner, otherAccount } = await loadFixture(deployFixture);
-      const maxUint256 = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-      const otherAccountAddress = getAddress(otherAccount.account!.address);
+      const maxUint256 = ethers.MaxUint256;
 
-      await ykaToken.write.approve(
-        [otherAccountAddress, maxUint256],
-        { account: owner.account! }
-      );
-
-      const allowance = await ykaToken.read.allowance([owner.account!.address, otherAccountAddress]);
-      expect(allowance).to.equal(maxUint256);
+      await token.approve(otherAccount.address, maxUint256);
+      expect(await token.allowance(owner.address, otherAccount.address)).to.equal(maxUint256);
     });
 
     it("Should fail transferFrom if allowance is exceeded", async function () {
-      const { ykaToken, owner, otherAccount, initialOwnerAddress } = await loadFixture(deployFixture);
-      const otherAccountAddress = getAddress(otherAccount.account!.address);
-      const amountToApprove = parseEther("100");
+      const amountToApprove = ethers.parseEther("100");
 
       // 承認を実行
-      await ykaToken.write.approve(
-        [otherAccountAddress, amountToApprove],
-        { account: owner.account! }
-      );
+      await token.approve(otherAccount.address, amountToApprove);
 
       // 承認額を超える転送を試みる
-      const excessAmount = amountToApprove + parseEther("1");
+      const excessAmount = amountToApprove + ethers.parseEther("1");
+
       await expect(
-        ykaToken.write.transferFrom(
-          [initialOwnerAddress, otherAccountAddress, excessAmount],
-          { account: otherAccount.account! }
-        )
-      ).to.be.rejectedWith(/ERC20InsufficientAllowance/);
+        token.connect(otherAccount).transferFrom(owner.address, otherAccount.address, excessAmount)
+      ).to.be.revertedWithCustomError(token, "ERC20InsufficientAllowance");
     });
   });
 });

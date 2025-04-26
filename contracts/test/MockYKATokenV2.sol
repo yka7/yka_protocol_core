@@ -5,10 +5,10 @@ import "../YKAToken.sol";
 
 contract MockYKATokenV2 is YKAToken {
     /**
-     * @dev Override version function to test upgrades
+     * @dev Returns the current version of the contract
      */
-    function version() public view virtual override returns (uint256) {
-        return _version;
+    function version() public view virtual returns (uint256) {
+        return _version + 1; // Simple modification for testing
     }
 
     // Add a new function to test upgrade success
@@ -20,7 +20,7 @@ contract MockYKATokenV2 is YKAToken {
     function initialize(
         uint256 _initialSupply,
         address _initialOwner
-    ) public virtual override initializer {
+    ) public override reinitializer(2) {
         super.initialize(_initialSupply, _initialOwner);
         _version = 2; // Set version to 2 for V2
     }

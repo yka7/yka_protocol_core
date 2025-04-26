@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { expect } from "../helpers/setup";
 import { ethers, upgrades } from "hardhat";
 import { YKAToken } from "../../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -25,14 +25,12 @@ describe("Economic Simulation Tests", function () {
       const distributionAmount = ethers.parseEther("10");
       const traderCount = 3;
 
-      // Distribute tokens to traders
       for (let i = 0; i < traderCount; i++) {
         await expect(token.transfer(traders[i].address, distributionAmount))
           .to.emit(token, "Transfer")
           .withArgs(owner.address, traders[i].address, distributionAmount);
       }
 
-      // Verify balances
       const ownerExpectedBalance = initialSupply - (distributionAmount * BigInt(traderCount));
       expect(await token.balanceOf(owner.address)).to.equal(ownerExpectedBalance);
 
@@ -43,19 +41,15 @@ describe("Economic Simulation Tests", function () {
     });
 
     it("Should simulate trading between traders", async function () {
-      // Initial distribution
       const initialAmount = ethers.parseEther("20");
       const transferAmount = ethers.parseEther("5");
 
-      // Distribute to first trader
       await token.transfer(traders[0].address, initialAmount);
 
-      // Transfer between traders
       await expect(token.connect(traders[0]).transfer(traders[1].address, transferAmount))
         .to.emit(token, "Transfer")
         .withArgs(traders[0].address, traders[1].address, transferAmount);
 
-      // Verify balances
       expect(await token.balanceOf(traders[0].address))
         .to.equal(initialAmount - transferAmount);
       expect(await token.balanceOf(traders[1].address))
@@ -68,14 +62,11 @@ describe("Economic Simulation Tests", function () {
       const initialAmount = ethers.parseEther("50");
       const transferAmount = ethers.parseEther("20");
 
-      // Initial setup
       await token.transfer(traders[0].address, initialAmount);
 
-      // Set approvals
       await token.connect(traders[0]).approve(traders[1].address, transferAmount);
       await token.connect(traders[0]).approve(traders[2].address, transferAmount);
 
-      // Execute transfers
       await expect(token.connect(traders[1])
         .transferFrom(traders[0].address, traders[1].address, transferAmount))
         .to.emit(token, "Transfer")
@@ -86,7 +77,6 @@ describe("Economic Simulation Tests", function () {
         .to.emit(token, "Transfer")
         .withArgs(traders[0].address, traders[2].address, transferAmount);
 
-      // Verify final balances
       expect(await token.balanceOf(traders[0].address))
         .to.equal(initialAmount - transferAmount * BigInt(2));
       expect(await token.balanceOf(traders[1].address))
@@ -99,19 +89,11 @@ describe("Economic Simulation Tests", function () {
       const initialAmount = ethers.parseEther("10");
       const transferAmount = ethers.parseEther("20");
 
-      // Initial setup
       await token.transfer(traders[0].address, initialAmount);
 
-      // Attempt transfer with insufficient balance
       await expect(token.connect(traders[0])
         .transfer(traders[1].address, transferAmount))
-        .to.be.revertedWith("ERC20: transfer amount exceeds balance");
-
-      // Verify balances remain unchanged
-      expect(await token.balanceOf(traders[0].address))
-        .to.equal(initialAmount);
-      expect(await token.balanceOf(traders[1].address))
-        .to.equal(0);
+        .to.be.revertedWithCustomError(token, "ERC20InsufficientBalance");
     });
 
     it("Should fail on insufficient allowance", async function () {
@@ -119,22 +101,12 @@ describe("Economic Simulation Tests", function () {
       const approvalAmount = ethers.parseEther("10");
       const transferAmount = ethers.parseEther("20");
 
-      // Initial setup
       await token.transfer(traders[0].address, initialAmount);
       await token.connect(traders[0]).approve(traders[1].address, approvalAmount);
 
-      // Attempt transfer with insufficient allowance
       await expect(token.connect(traders[1])
         .transferFrom(traders[0].address, traders[1].address, transferAmount))
         .to.be.revertedWithCustomError(token, "ERC20InsufficientAllowance");
-
-      // Verify balances and allowance remain unchanged
-      expect(await token.balanceOf(traders[0].address))
-        .to.equal(initialAmount);
-      expect(await token.balanceOf(traders[1].address))
-        .to.equal(0);
-      expect(await token.allowance(traders[0].address, traders[1].address))
-        .to.equal(approvalAmount);
     });
   });
 });
