@@ -31,17 +31,11 @@ describe("Ownership Management", () => {
   - イベントの引数検証（前オーナー、新オーナー）
   - 移転後の権限確認
 
-  it("Should prevent transfer to zero address")
-  // ゼロアドレスへの移転防止
+  it("Should handle transfer to zero address")
+  // ゼロアドレスへの移転
   検証項目：
-  - ゼロアドレスへの移転試行
-  - OwnableInvalidOwnerエラーの発生確認
-
-  it("Should handle transfer to same address")
-  // 同一アドレスへの移転
-  検証項目：
-  - 現オーナーアドレスへの移転
-  - エラーが発生しないことの確認
+  - ゼロアドレスへの移転実行
+  - pendingOwnerがゼロアドレスになることの確認
 ```
 
 ### オーナーシップ移転
@@ -68,10 +62,10 @@ describe("Ownership Transfer", () => {
 ```typescript
 describe("Edge Cases", () => {
   it("Should handle zero address cases")
-  // ゼロアドレス関連の検証
+  // ゼロアドレスへの移転
   検証項目：
-  - ゼロアドレスへの移転防止
-  - 初期化時のゼロアドレスチェック
+  - ゼロアドレスへの移転実行
+  - pendingOwnerがゼロアドレスになることの確認
 
   it("Should handle repeated transfer attempts")
   // 連続移転試行
@@ -124,7 +118,7 @@ expect(accept)
 // 非オーナーからの操作防止
 await expect(
   token.connect(nonOwner).transferOwnership(newOwner)
-).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
+).to.be.revertedWith("Ownable: caller is not the owner");
 ```
 
 ### 2. 無効な移転
@@ -143,4 +137,3 @@ npm test test/ownership/ownership.test.ts
 # 特定のテストケースの実行
 npm test test/ownership/ownership.test.ts -g "Basic Ownership"
 npm test test/ownership/ownership.test.ts -g "Ownership Transfer"
-```

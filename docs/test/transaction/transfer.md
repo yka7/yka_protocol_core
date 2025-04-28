@@ -22,23 +22,11 @@ describe("Basic Transfer", () => {
   検証項目：
   - ERC20InsufficientBalance エラーの発生
   - 残高の変更なし
-```
-
-### エッジケース
-
-```typescript
-describe("Edge Cases", () => {
-  it("Should handle zero transfers")
-  // ゼロ額転送の処理
-  検証項目：
-  - トランザクション成功
-  - 残高変更なし
-  - Transfer イベント発行
 
   it("Should prevent transfers to zero address")
   // ゼロアドレスへの転送防止
   検証項目：
-  - エラー発生
+  - ZeroAddress エラーの発生
   - トランザクション失敗
 ```
 
@@ -80,6 +68,11 @@ expect(transfer).to.emit(token, "Transfer").withArgs(sender, recipient, amount);
 await expect(
   token.transfer(recipient, moreThanBalance)
 ).to.be.revertedWithCustomError(token, "ERC20InsufficientBalance");
+
+// ゼロアドレスエラーの確認
+await expect(
+  token.transfer(ethers.ZeroAddress, amount)
+).to.be.revertedWithCustomError(token, "ZeroAddress");
 ```
 
 ## テスト実行方法
@@ -90,4 +83,3 @@ npm test test/transaction/transfer.test.ts
 
 # 特定のテストケースの実行
 npm test test/transaction/transfer.test.ts -g "Basic Transfer"
-```
