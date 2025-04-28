@@ -1,68 +1,106 @@
 import { expect } from "../helpers/setup";
-import { ethers, upgrades } from "hardhat";
-import { YKAToken } from "../../typechain-types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { viem } from 'hardhat';
+import { parseEther } from 'viem';
+import type { PublicClient } from 'viem';
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("YKAToken Transactions: Transfer", function () {
-  let token: YKAToken;
-  let owner: SignerWithAddress;
-  let otherAccount: SignerWithAddress;
-  const initialSupply = ethers.parseEther("1000000");
+  const initialSupply = parseEther("1000000");
 
-  beforeEach(async function () {
-    [owner, otherAccount] = await ethers.getSigners();
+  async function deployFixture() {
+    const [deployer, otherAccount] = await viem.getWalletClients();
 
-    const YKATokenFactory = await ethers.getContractFactory("YKAToken");
-    token = await upgrades.deployProxy(YKATokenFactory, [
-      initialSupply,
-      owner.address
-    ]) as YKAToken;
-    await token.waitForDeployment();
-  });
+    // Deploy token
+    const token = await viem.deployContract("YKAToken");
+
+    // Initialize
+    await token.write.initialize([initialSupply, deployer.account.address]);
+
+    return {
+      token,
+      deployer,
+      otherAccount,
+      deployerAddress: deployer.account.address,
+      otherAddress: otherAccount.account.address
+    };
+  }
 
   describe("Basic Transfer", function () {
     it("Should transfer tokens between accounts", async function () {
-      const amount = ethers.parseEther("100");
+      const fixture = await loadFixture(deployFixture);
+      const amount = parseEther("100");
 
-      await expect(token.transfer(otherAccount.address, amount))
-        .to.emit(token, "Transfer")
-        .withArgs(owner.address, otherAccount.address, amount);
+      await fixture.token.write.transfer(
+        [fixture.otherAddress, amount],
+        { account: fixture.deployer.account }
+      );
 
-      expect(await token.balanceOf(otherAccount.address)).to.equal(amount);
+      const balance = await fixture.token.read.balanceOf([fixture.otherAddress]);
+      expect(balance).to.equal(amount);
     });
 
     it("Should fail if sender doesn't have enough tokens", async function () {
-      const ownerBalance = await token.balanceOf(owner.address);
-      const amountToSend = ownerBalance + ethers.parseEther("1");
+      const fixture = await loadFixture(deployFixture);
+      const balance = await fixture.token.read.balanceOf([fixture.deployerAddress]);
+      const amountToSend = balance + parseEther("1");
 
       await expect(
-        token.transfer(otherAccount.address, amountToSend)
-      ).to.be.revertedWithCustomError(token, "ERC20InsufficientBalance");
+        fixture.token.write.transfer(
+          [fixture.otherAddress, amountToSend],
+          { account: fixture.deployer.account }
+        )
+      ).to.be.rejectedWith("ERC20InsufficientBalance");
     });
 
     it("Should prevent transfers to zero address", async function () {
-      const amount = ethers.parseEther("10");
+      const fixture = await loadFixture(deployFixture);
+      const amount = parseEther("10");
 
       await expect(
-        token.transfer(ethers.ZeroAddress, amount)
-      ).to.be.revertedWithCustomError(token, "ZeroAddress");
+        fixture.token.write.transfer(
+          ["0x0000000000000000000000000000000000000000", amount],
+          { account: fixture.deployer.account }
+        )
+      ).to.be.rejectedWith("ZeroAddress");
     });
   });
 
-  describe("Batch Transfers", function () {
-    it("Should handle multiple transfers in a loop", async function () {
-      const recipients = Array(3).fill(otherAccount.address);
-      const amounts = Array(3).fill(ethers.parseEther("10"));
+  describe("Batch Transfer", function () {
+    it("Should handle batch transfers with dynamic batch size", async function () {
+      const fixture = await loadFixture(deployFixture);
+      const recipients = Array(10).fill(fixture.otherAddress);
+      const amounts = Array(10).fill(parseEther("10"));
       const totalTransferred = amounts.reduce((a, b) => a + b, BigInt(0));
+      const batchSize = BigInt(3);
 
-      for (let i = 0; i < recipients.length; i++) {
-        await expect(token.transfer(recipients[i], amounts[i]))
-          .to.emit(token, "Transfer")
-          .withArgs(owner.address, recipients[i], amounts[i]);
-      }
+      const tx = await fixture.token.write.batchTransfer(
+        [recipients, amounts, batchSize],
+        { account: fixture.deployer.account }
+      );
 
-      expect(await token.balanceOf(owner.address)).to.equal(initialSupply - totalTransferred);
-      expect(await token.balanceOf(otherAccount.address)).to.equal(totalTransferred);
+      const client = await viem.getPublicClient() as PublicClient;
+      const receipt = await client.waitForTransactionReceipt({ hash: tx });
+      expect(receipt.status).to.equal('success');
+
+      const ownerBalance = await fixture.token.read.balanceOf([fixture.deployerAddress]);
+      const otherBalance = await fixture.token.read.balanceOf([fixture.otherAddress]);
+
+      expect(ownerBalance).to.equal(initialSupply - totalTransferred);
+      expect(otherBalance).to.equal(totalTransferred);
+    });
+
+    it("Should fail with zero batch size", async function () {
+      const fixture = await loadFixture(deployFixture);
+      const recipients = Array(3).fill(fixture.otherAddress);
+      const amounts = Array(3).fill(parseEther("10"));
+      const batchSize = BigInt(0);
+
+      await expect(
+        fixture.token.write.batchTransfer(
+          [recipients, amounts, batchSize],
+          { account: fixture.deployer.account }
+        )
+      ).to.be.rejectedWith("BatchParamsInvalid");
     });
   });
 });

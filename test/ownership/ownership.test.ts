@@ -1,117 +1,183 @@
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { viem } from "hardhat";
 import { expect } from "../helpers/setup";
-import { ethers, upgrades } from "hardhat";
-import type { YKAToken } from "../../typechain-types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { parseEther, PublicActions, WalletActions } from "viem";
+import type { PublicClient, WalletClient } from "viem";
 
 describe("YKAToken Ownership", function () {
-  let token: YKAToken;
-  let deployer: SignerWithAddress;
-  let deployerAddress: string;
-  let newOwner: SignerWithAddress;
-  let newOwnerAddress: string;
-  let nonOwner: SignerWithAddress;
-  const initialSupply = ethers.parseEther("1000000");
+  let client: PublicClient & WalletActions;
+  const initialSupply = parseEther("1000000");
 
-  beforeEach(async function () {
-    [deployer, newOwner, nonOwner] = await ethers.getSigners();
+  async function deployFixture() {
+    const [deployer, newOwner, nonOwner] = await viem.getWalletClients();
 
-    deployerAddress = deployer.address;
-    newOwnerAddress = newOwner.address;
+    // Deploy token
+    const token = await viem.deployContract("YKAToken");
 
-    const YKATokenFactory = await ethers.getContractFactory("YKAToken");
-    token = await upgrades.deployProxy(YKATokenFactory, [
-      initialSupply,
-      deployerAddress
-    ]) as YKAToken;
-    await token.waitForDeployment();
-  });
+    // Initialize
+    await token.write.initialize([initialSupply, deployer.account.address]);
+
+    return {
+      token,
+      deployerAddress: deployer.account.address,
+      newOwnerAddress: newOwner.account.address,
+      nonOwnerAddress: nonOwner.account.address,
+      deployerClient: deployer,
+      newOwnerClient: newOwner,
+      nonOwnerClient: nonOwner
+    };
+  }
 
   describe("Basic Ownership Management", function () {
     it("Should allow owner to transfer ownership", async function () {
-      await token.transferOwnership(newOwnerAddress);
-      const pendingOwner = await token.pendingOwner();
-      expect(pendingOwner.toLowerCase()).to.equal(newOwnerAddress.toLowerCase());
+      const fixture = await loadFixture(deployFixture);
+      await fixture.token.write.transferOwnership(
+        [fixture.newOwnerAddress],
+        { account: fixture.deployerClient.account }
+      );
+      const pendingOwner = await fixture.token.read.pendingOwner();
+      expect(pendingOwner.toLowerCase()).to.equal(fixture.newOwnerAddress.toLowerCase());
     });
 
     it("Should prevent non-owner from transferring ownership", async function () {
+      const fixture = await loadFixture(deployFixture);
       await expect(
-        token.connect(nonOwner).transferOwnership(newOwnerAddress)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+        fixture.token.write.transferOwnership(
+          [fixture.newOwnerAddress],
+          { account: fixture.nonOwnerClient.account }
+        )
+      ).to.be.rejectedWith("Ownable: caller is not the owner");
     });
 
     it("Should emit OwnershipTransferStarted and OwnershipTransferred events", async function () {
-      await token.transferOwnership(newOwnerAddress);
-      await token.connect(newOwner).acceptOwnership();
-      const owner = await token.owner();
-      expect(owner.toLowerCase()).to.equal(newOwnerAddress.toLowerCase());
+      const fixture = await loadFixture(deployFixture);
+      client = await viem.getPublicClient() as PublicClient & WalletActions;
+
+      // Test OwnershipTransferStarted event
+      const tx1 = await fixture.token.write.transferOwnership(
+        [fixture.newOwnerAddress],
+        { account: fixture.deployerClient.account }
+      );
+      const receipt1 = await client.waitForTransactionReceipt({ hash: tx1 });
+      expect(receipt1.status).to.equal('success');
+      expect(receipt1.logs.length).to.be.greaterThan(0);
+
+      // Test OwnershipTransferred event
+      const tx2 = await fixture.token.write.acceptOwnership({
+        account: fixture.newOwnerClient.account
+      });
+      const receipt2 = await client.waitForTransactionReceipt({ hash: tx2 });
+      expect(receipt2.status).to.equal('success');
+      expect(receipt2.logs.length).to.be.greaterThan(0);
+
+      const owner = await fixture.token.read.owner();
+      expect(owner.toLowerCase()).to.equal(fixture.newOwnerAddress.toLowerCase());
     });
 
     it("Should handle transfer to zero address", async function () {
-      await token.transferOwnership(ethers.ZeroAddress);
-      const pendingOwner = await token.pendingOwner();
-      expect(pendingOwner).to.equal(ethers.ZeroAddress);
+      const fixture = await loadFixture(deployFixture);
+      await fixture.token.write.transferOwnership(
+        ["0x0000000000000000000000000000000000000000"],
+        { account: fixture.deployerClient.account }
+      );
+      const pendingOwner = await fixture.token.read.pendingOwner();
+      expect(pendingOwner).to.equal("0x0000000000000000000000000000000000000000");
     });
 
     it("Should handle transfer to same address", async function () {
-      await token.transferOwnership(deployerAddress);
-      const pendingOwner = await token.pendingOwner();
-      expect(pendingOwner.toLowerCase()).to.equal(deployerAddress.toLowerCase());
+      const fixture = await loadFixture(deployFixture);
+      await fixture.token.write.transferOwnership(
+        [fixture.deployerAddress],
+        { account: fixture.deployerClient.account }
+      );
+      const pendingOwner = await fixture.token.read.pendingOwner();
+      expect(pendingOwner.toLowerCase()).to.equal(fixture.deployerAddress.toLowerCase());
     });
   });
 
   describe("Ownership Transfer", function () {
     it("Should handle ownership transfer correctly", async function () {
+      const fixture = await loadFixture(deployFixture);
+
       // Step 1: Transfer ownership
-      await token.transferOwnership(newOwnerAddress);
-      const pendingOwner = await token.pendingOwner();
-      expect(pendingOwner.toLowerCase()).to.equal(newOwnerAddress.toLowerCase());
+      await fixture.token.write.transferOwnership(
+        [fixture.newOwnerAddress],
+        { account: fixture.deployerClient.account }
+      );
+      const pendingOwner = await fixture.token.read.pendingOwner();
+      expect(pendingOwner.toLowerCase()).to.equal(fixture.newOwnerAddress.toLowerCase());
 
       // Step 2: Accept ownership
-      await token.connect(newOwner).acceptOwnership();
-      const owner = await token.owner();
-      expect(owner.toLowerCase()).to.equal(newOwnerAddress.toLowerCase());
-      expect(await token.pendingOwner()).to.equal(ethers.ZeroAddress);
+      await fixture.token.write.acceptOwnership({
+        account: fixture.newOwnerClient.account
+      });
+      const owner = await fixture.token.read.owner();
+      expect(owner.toLowerCase()).to.equal(fixture.newOwnerAddress.toLowerCase());
+      expect(await fixture.token.read.pendingOwner()).to.equal("0x0000000000000000000000000000000000000000");
     });
 
     it("Should cancel ownership transfer", async function () {
+      const fixture = await loadFixture(deployFixture);
+
       // Initiate transfer
-      await token.transferOwnership(newOwnerAddress);
-      const pendingOwner = await token.pendingOwner();
-      expect(pendingOwner.toLowerCase()).to.equal(newOwnerAddress.toLowerCase());
+      await fixture.token.write.transferOwnership(
+        [fixture.newOwnerAddress],
+        { account: fixture.deployerClient.account }
+      );
+      const pendingOwner = await fixture.token.read.pendingOwner();
+      expect(pendingOwner.toLowerCase()).to.equal(fixture.newOwnerAddress.toLowerCase());
 
       // Cancel transfer
-      await token.transferOwnership(ethers.ZeroAddress);
-      expect(await token.pendingOwner()).to.equal(ethers.ZeroAddress);
+      await fixture.token.write.transferOwnership(
+        ["0x0000000000000000000000000000000000000000"],
+        { account: fixture.deployerClient.account }
+      );
+      expect(await fixture.token.read.pendingOwner()).to.equal("0x0000000000000000000000000000000000000000");
     });
   });
 
   describe("Edge Cases", function () {
     it("Should handle zero address cases", async function () {
-      await token.transferOwnership(ethers.ZeroAddress);
-      const pendingOwner = await token.pendingOwner();
-      expect(pendingOwner).to.equal(ethers.ZeroAddress);
+      const fixture = await loadFixture(deployFixture);
+
+      await fixture.token.write.transferOwnership(
+        ["0x0000000000000000000000000000000000000000"],
+        { account: fixture.deployerClient.account }
+      );
+      const pendingOwner = await fixture.token.read.pendingOwner();
+      expect(pendingOwner).to.equal("0x0000000000000000000000000000000000000000");
       // Verify current owner is unchanged
-      const owner = await token.owner();
-      expect(owner.toLowerCase()).to.equal(deployerAddress.toLowerCase());
+      const owner = await fixture.token.read.owner();
+      expect(owner.toLowerCase()).to.equal(fixture.deployerAddress.toLowerCase());
     });
 
     it("Should handle repeated transfer attempts", async function () {
+      const fixture = await loadFixture(deployFixture);
+
       // First transfer attempt
-      await token.transferOwnership(newOwnerAddress);
-      const pendingOwner = await token.pendingOwner();
-      expect(pendingOwner.toLowerCase()).to.equal(newOwnerAddress.toLowerCase());
+      await fixture.token.write.transferOwnership(
+        [fixture.newOwnerAddress],
+        { account: fixture.deployerClient.account }
+      );
+      const pendingOwner = await fixture.token.read.pendingOwner();
+      expect(pendingOwner.toLowerCase()).to.equal(fixture.newOwnerAddress.toLowerCase());
 
       // Second transfer attempt before acceptance
-      const anotherOwner = (await ethers.getSigners())[3];
-      const anotherOwnerAddress = anotherOwner.address;
-      await token.transferOwnership(anotherOwnerAddress);
-      const pendingOwner2 = await token.pendingOwner();
+      const [,,,anotherOwner] = await viem.getWalletClients();
+      const anotherOwnerAddress = anotherOwner.account.address;
+      await fixture.token.write.transferOwnership(
+        [anotherOwnerAddress],
+        { account: fixture.deployerClient.account }
+      );
+      const pendingOwner2 = await fixture.token.read.pendingOwner();
       expect(pendingOwner2.toLowerCase()).to.equal(anotherOwnerAddress.toLowerCase());
 
       // Original pending owner should not be able to accept
       await expect(
-        token.connect(newOwner).acceptOwnership()
-      ).to.be.revertedWith("Ownable2Step: caller is not the new owner");
+        fixture.token.write.acceptOwnership({
+          account: fixture.newOwnerClient.account
+        })
+      ).to.be.rejectedWith("Ownable2Step: caller is not the new owner");
     });
   });
 });

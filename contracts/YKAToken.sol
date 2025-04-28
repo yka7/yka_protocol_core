@@ -107,10 +107,12 @@ contract YKAToken is
     // --- Polygon Optimized Functions ---
     function batchTransfer(
         address[] calldata recipients,
-        uint256[] calldata amounts
+        uint256[] calldata amounts,
+        uint256 batchSize
     ) external returns (bool) {
         uint256 length = recipients.length;
         if (length == 0 || length != amounts.length) revert BatchParamsInvalid();
+        if (batchSize == 0) revert BatchParamsInvalid();
 
         address sender = _msgSender();
         uint256 totalAmount;
@@ -127,14 +129,14 @@ contract YKAToken is
         if (balanceOf(sender) < totalAmount) revert ERC20InsufficientBalance();
 
         for (uint256 i = 0; i < length;) {
-            address recipient = recipients[i];
-            if (recipient == address(0)) revert ZeroAddress();
-            _transfer(sender, recipient, amounts[i]);
-            unchecked { ++i; }
-
-            if (i > 0 && i % 100 == 0 && i < length) {
-                emit BatchProcessed(i, length);
+            uint256 end = (i + batchSize > length) ? length : i + batchSize;
+            for (; i < end;) {
+                address recipient = recipients[i];
+                if (recipient == address(0)) revert ZeroAddress();
+                _transfer(sender, recipient, amounts[i]);
+                unchecked { ++i; }
             }
+            emit BatchProcessed(i, length);
         }
 
         return true;
@@ -145,10 +147,12 @@ contract YKAToken is
     function batchTransferFrom(
         address sender,
         address[] calldata recipients,
-        uint256[] calldata amounts
+        uint256[] calldata amounts,
+        uint256 batchSize
     ) external returns (bool) {
         uint256 length = recipients.length;
         if (length == 0 || length != amounts.length) revert BatchParamsInvalid();
+        if (batchSize == 0) revert BatchParamsInvalid();
 
         address spender = _msgSender();
         uint256 totalAmount;
@@ -166,14 +170,14 @@ contract YKAToken is
         if (balanceOf(sender) < totalAmount) revert ERC20InsufficientBalance();
 
         for (uint256 i = 0; i < length;) {
-            address recipient = recipients[i];
-            if (recipient == address(0)) revert ZeroAddress();
-            _transfer(sender, recipient, amounts[i]);
-            unchecked { ++i; }
-
-            if (i > 0 && i % 100 == 0 && i < length) {
-                emit BatchProcessed(i, length);
+            uint256 end = (i + batchSize > length) ? length : i + batchSize;
+            for (; i < end;) {
+                address recipient = recipients[i];
+                if (recipient == address(0)) revert ZeroAddress();
+                _transfer(sender, recipient, amounts[i]);
+                unchecked { ++i; }
             }
+            emit BatchProcessed(i, length);
         }
 
         _approve(sender, spender, allowance(sender, spender) - totalAmount);
