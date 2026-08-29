@@ -19,3 +19,6 @@ ignition/cache/*
 
 # memory-bank
 memory-bank
+
+# ai-hub agent worktrees (removed by the harness after each run)
+/worktrees
