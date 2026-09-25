@@ -3,8 +3,6 @@ Repository: yka_protocol_core
 
 ## 階層関係（エスカレーション経路）
 
-- 親: business_notes（推定・jinno確定待ち）
-- 根拠: YKA 名前空間のリポ群に属する Yka Protocol のスマートコントラクトであり、事業固有の技術資産と推定される。ただし README が 1 行のみで YKA 事業本体との具体的関係までは確認できない。
-- 出典: README.md、hardhat.config.ts、原則 llm-wiki-discipline の drafts-are-status-marked（状態表示付き草案）。
-
-- Observation: 上記の親は推定草案であり、jinno確定後に contracts registry の spec.parent へ反映される。provider/consumer の検証済み関係はまだない。
+- 親: business_notes（jinno確定 2026-09-26）
+- 根拠: Yka Protocol Core スマートコントラクト（Hardhat+OpenZeppelin）（YKA 名前空間の事業固有技術資産・README 1 行のみで事業内位置づけ未確認）
+- 出典: contracts registry `registry/organization/repositories/yka_protocol_core.yaml` の spec.parent（contracts commit ecbc226）。2026-09-26 の一括レビュー表（/home/jinno/output/repo-parent-review-2026-09-26.md）を jinno が現状案で承認。
