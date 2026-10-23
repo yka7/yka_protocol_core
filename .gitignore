@@ -22,3 +22,7 @@ memory-bank
 
 # ai-hub agent worktrees (removed by the harness after each run)
 /worktrees
+
+# auto-added by instructions/10_storage/100_audit_storage_policy.md
+.audit/development_direction.yml
+
