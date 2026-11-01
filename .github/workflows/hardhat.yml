@@ -44,14 +44,3 @@ jobs:
           INITIAL_SUPPLY: ${{ secrets.INITIAL_SUPPLY }}
           MAX_SUPPLY: ${{ secrets.MAX_SUPPLY }}
           AIRDROP_AMOUNT: ${{ secrets.AIRDROP_AMOUNT }}
-
-      - name: Deploy to Amoy
-        run: npm run deploy:amoy
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-          AMOY_RPC_URL: ${{ secrets.AMOY_RPC_URL }}
-          POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
-          POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
-          INITIAL_SUPPLY: ${{ secrets.INITIAL_SUPPLY }}
-          MAX_SUPPLY: ${{ secrets.MAX_SUPPLY }}
-          AIRDROP_AMOUNT: ${{ secrets.AIRDROP_AMOUNT }}

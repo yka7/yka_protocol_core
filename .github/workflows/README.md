@@ -6,13 +6,12 @@
 
 ### 1. Hardhat CI (`hardhat.yml`)
 
-コントラクトのビルド、検証、デプロイメントを管理するワークフロー
+コントラクトのビルドと検証を行うワークフロー
 
 **主な責務:**
 - Solidityコントラクトのコンパイル
 - リンター実行による静的解析
-- テストネットへのデプロイ
-- 環境変数と秘密情報の管理
+- ユニットテストの実行
 
 **実行タイミング:**
 - mainブランチへのプッシュ
@@ -36,17 +35,26 @@
 
 ### Hardhat CI で使用する環境変数
 
+CI（lint・compile・test）に必須の変数はない。テスト実行時のオプション:
+
+| 変数名 | 説明 | 必須 |
+|--------|------|------|
+| REPORT_GAS | ガスレポート有効化フラグ | - |
+| COINMARKETCAP_API_KEY | CoinMarketCap API キー | - |
+
+### デプロイスクリプト（ローカル実行 `npm run deploy:*`）で使用する環境変数
+
+CIではデプロイを実行しない（2026-11-02 に "Deploy to Amoy" ステップを削除 — AmoyテストネットのRPC `rpc-amoy.polygon.technology` が名前解決不能になり、`AMOY_RPC_URL` secret も未設定のため全PR/pushで必ず失敗していた）。デプロイはローカルまたは手動ディスパッチで実行すること。
+
 | 変数名 | 説明 | 必須 |
 |--------|------|------|
 | PRIVATE_KEY | デプロイ用ウォレットの秘密鍵 | ✅ |
-| AMOY_RPC_URL | Amoyテストネットのエンドポイント | ✅ |
+| AMOY_RPC_URL | Amoyテストネットのエンドポイント（※テストネット廃止済みのため要移行） | ✅ |
 | POLYGON_RPC_URL | Polygonネットワークのエンドポイント | ✅ |
 | POLYGONSCAN_API_KEY | PolygonScan API キー | ✅ |
 | INITIAL_SUPPLY | 初期供給量 | ✅ |
 | MAX_SUPPLY | 最大供給量 | ✅ |
 | AIRDROP_AMOUNT | エアドロップ量 | ✅ |
-| REPORT_GAS | ガスレポート有効化フラグ | - |
-| COINMARKETCAP_API_KEY | CoinMarketCap API キー | - |
 
 ### Test CI で使用する環境変数
 
@@ -62,7 +70,7 @@
 
 2. mainブランチへのマージ時:
    1. Test CIによるテスト実行
-   2. Hardhat CIによるテストネットデプロイ
+   2. Hardhat CIによるlint・コンパイル・テスト実行
 
 ## 注意事項
 
