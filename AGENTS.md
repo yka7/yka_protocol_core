@@ -74,6 +74,10 @@ make lint          # 静的解析（実コマンドを確認）
 - この節は**空欄の種**です。リポジトリで実際に踏んだ gotcha（環境・依存・実行時の罠）を追記してください。
 - `git add -A` 禁止（§1）。runtime artifact や他エージェントの in-flight を巻き込む。
 - driver 管理ファイルを直接編集しない（§2）。
+- **CI が main の push で赤くなる条件（2026-11-03 実測）**: 品質ゲートは lint / compile / test のみ。テストネットへの `Deploy to Amoy` は owner 側の secret（`AMOY_RPC_URL` 等）に依存する運用アクションなので、main push のみ実行し `continue-on-error` で CI の判定には影響させない（従来は PR でも deploy を走らせ、`getaddrinfo ENOTFOUND rpc-amoy.polygon.technology` で CI を赤くしていた）。
+- **`GITHUB_TOKEN` の既定権限は `read`**: `default_workflow_permissions` が `read` のため、PR にコメントを投稿する workflow は `permissions: pull-requests: write` を明示しない限り "Resource not accessible by integration" で失敗する。
+- **ignition のパラメータ**: `m.getParameter(name)` に既定値が無いパラメータはデプロイ時に必ず値を渡す必要がある（`IGN725`）。`hardhat ignition deploy` を直接叩くと `initialOwner` で失敗するため `scripts/deploy.ts` 経由（PRIVATE_KEY から `initialOwner` を導出）を使う。
+- **Amoy 公開RPC**: `https://rpc-amoy.polygon.technology` は解決不能（DNS NXDOMAIN）。既定値は `https://polygon-amoy.drpc.org`（chainId 80002）。
 
 ---
 

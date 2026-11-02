@@ -10,6 +10,8 @@ jobs:
   test:
     name: Run Hardhat Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -45,7 +47,13 @@ jobs:
           MAX_SUPPLY: ${{ secrets.MAX_SUPPLY }}
           AIRDROP_AMOUNT: ${{ secrets.AIRDROP_AMOUNT }}
 
+      # デプロイは品質ゲートではなく運用アクション:
+      #  - PR では実行しない（未信頼の PR コードに資金済みの PRIVATE_KEY を触らせない）
+      #  - 失敗しても CI を落とさない（テストネット状態は owner 側の secret 依存であり、
+      #    CI の品質ゲート＝lint/compile/test を赤くしない）
       - name: Deploy to Amoy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
         run: npm run deploy:amoy
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}

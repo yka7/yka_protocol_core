@@ -1,29 +1,18 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { parseEther } from "viem";
 
-interface ModuleParameterRuntimeValue {
-  moduleId: string;
-  name: string;
-  defaultValue: any;
-  type: string;
-}
-
 const YKATokenModule = buildModule("YKATokenModule", (m) => {
   // Get required parameters
+  // initialOwner must be supplied at deploy time (scripts/deploy.ts derives it from PRIVATE_KEY)
   const owner = m.getParameter<string>("initialOwner");
-  const initialSupplyParam = m.getParameter<string>("initialSupply");
+  // initialSupply keeps a default so a deploy without it does not fail on a missing parameter
+  const initialSupply = m.getParameter<bigint>("initialSupply", parseEther("1000000"));
 
   // Deploy the implementation contract
   const token = m.contract("YKAToken");
 
-  // Extract value from parameter
-  const supplyValue = (initialSupplyParam as unknown as ModuleParameterRuntimeValue).defaultValue || "1000000";
-
   // Initialize with validated parameters
-  m.call(token, "initialize", [
-    parseEther(String(supplyValue)),
-    owner
-  ]);
+  m.call(token, "initialize", [initialSupply, owner]);
 
   return { token };
 });
