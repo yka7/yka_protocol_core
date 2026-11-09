@@ -8,7 +8,10 @@ on:
 
 permissions:
   contents: read
+  # The coverage comment is posted through the issues-comments API on a pull
+  # request, which accepts either permission.
   pull-requests: write
+  issues: write
 
 jobs:
   test:
