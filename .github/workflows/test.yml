@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   test:
     name: Run Tests and Coverage
@@ -71,4 +75,4 @@ jobs:
 
             現在のカバレッジ: ${{ env.COVERAGE_PERCENTAGE }}%
 
-            詳細なレポートは [Codecov](${{ steps.codecov.outputs.url }}) で確認できます。
+            詳細なレポートは [Codecov](https://codecov.io/gh/${{ github.repository }}) で確認できます。

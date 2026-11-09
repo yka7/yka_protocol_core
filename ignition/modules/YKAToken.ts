@@ -9,9 +9,14 @@ interface ModuleParameterRuntimeValue {
 }
 
 const YKATokenModule = buildModule("YKATokenModule", (m) => {
+  const initialOwner = process.env.INITIAL_OWNER;
+  if (!initialOwner) {
+    throw new Error("INITIAL_OWNER is required to deploy YKAToken (set it in .env or as a repository secret)");
+  }
+
   // Get required parameters
-  const owner = m.getParameter<string>("initialOwner");
-  const initialSupplyParam = m.getParameter<string>("initialSupply");
+  const owner = m.getParameter<string>("initialOwner", initialOwner);
+  const initialSupplyParam = m.getParameter<string>("initialSupply", "1000000");
 
   // Deploy the implementation contract
   const token = m.contract("YKAToken");

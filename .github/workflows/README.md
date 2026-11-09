@@ -6,17 +6,18 @@
 
 ### 1. Hardhat CI (`hardhat.yml`)
 
-コントラクトのビルド、検証、デプロイメントを管理するワークフロー
+コントラクトのビルドと検証を管理するワークフロー
 
 **主な責務:**
 - Solidityコントラクトのコンパイル
 - リンター実行による静的解析
-- テストネットへのデプロイ
 - 環境変数と秘密情報の管理
+- テストネットへのデプロイ（手動実行のみ。`workflow_dispatch` の `deploy-amoy` ジョブ）
 
 **実行タイミング:**
 - mainブランチへのプッシュ
 - プルリクエスト作成時
+- 手動ディスパッチ（`deploy-amoy` ジョブのみ）
 
 ### 2. Test CI (`test.yml`)
 
@@ -38,10 +39,11 @@
 
 | 変数名 | 説明 | 必須 |
 |--------|------|------|
-| PRIVATE_KEY | デプロイ用ウォレットの秘密鍵 | ✅ |
-| AMOY_RPC_URL | Amoyテストネットのエンドポイント | ✅ |
+| PRIVATE_KEY | デプロイ用ウォレットの秘密鍵 | ✅（手動デプロイ時） |
+| AMOY_RPC_URL | Amoyテストネットのエンドポイント | -（未設定時は `https://rpc-amoy.publicnode.com` を使用） |
 | POLYGON_RPC_URL | Polygonネットワークのエンドポイント | ✅ |
 | POLYGONSCAN_API_KEY | PolygonScan API キー | ✅ |
+| INITIAL_OWNER | デプロイ時にトークンの所有権へ割り当てるアドレス | ✅（手動デプロイ時） |
 | INITIAL_SUPPLY | 初期供給量 | ✅ |
 | MAX_SUPPLY | 最大供給量 | ✅ |
 | AIRDROP_AMOUNT | エアドロップ量 | ✅ |
@@ -62,7 +64,15 @@
 
 2. mainブランチへのマージ時:
    1. Test CIによるテスト実行
-   2. Hardhat CIによるテストネットデプロイ
+   2. Hardhat CIによるlint・コンパイル・テスト
+
+## デプロイ（手動）
+
+- テストネットへのデプロイは `workflow_dispatch` でのみ実行されます。
+- `deploy-amoy` ジョブは `PRIVATE_KEY` と `INITIAL_OWNER` のシークレットが
+  設定されている場合にのみ成功します。テストネットのファンデッド鍵と
+  `AMOY_RPC_URL` / `INITIAL_OWNER` の設定はリポジトリ管理者の領域です。
+- デプロイは CI のゲートではありません（PR・main の成否に影響しません）。
 
 ## 注意事項
 
