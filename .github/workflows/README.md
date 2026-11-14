@@ -11,12 +11,12 @@
 **主な責務:**
 - Solidityコントラクトのコンパイル
 - リンター実行による静的解析
-- テストネットへのデプロイ
+- テストネットへのデプロイ（main への push のみ。失敗しても CI の判定は落とさない）
 - 環境変数と秘密情報の管理
 
 **実行タイミング:**
-- mainブランチへのプッシュ
-- プルリクエスト作成時
+- mainブランチへのプッシュ（品質ゲート ＋ テストネットデプロイ）
+- プルリクエスト作成時（品質ゲートのみ。デプロイは実行しない）
 
 ### 2. Test CI (`test.yml`)
 
@@ -38,13 +38,13 @@
 
 | 変数名 | 説明 | 必須 |
 |--------|------|------|
-| PRIVATE_KEY | デプロイ用ウォレットの秘密鍵 | ✅ |
-| AMOY_RPC_URL | Amoyテストネットのエンドポイント | ✅ |
-| POLYGON_RPC_URL | Polygonネットワークのエンドポイント | ✅ |
-| POLYGONSCAN_API_KEY | PolygonScan API キー | ✅ |
-| INITIAL_SUPPLY | 初期供給量 | ✅ |
-| MAX_SUPPLY | 最大供給量 | ✅ |
-| AIRDROP_AMOUNT | エアドロップ量 | ✅ |
+| PRIVATE_KEY | デプロイ用ウォレットの秘密鍵（`initialOwner` の導出元） | ✅ |
+| AMOY_RPC_URL | Amoyテストネットのエンドポイント（未設定時は公開RPCへフォールバック） | - |
+| POLYGON_RPC_URL | Polygonネットワークのエンドポイント | - |
+| POLYGONSCAN_API_KEY | PolygonScan API キー | - |
+| INITIAL_SUPPLY | 初期供給量（現状コードは未使用。供給量は ignition モジュールの `initialSupply` が既定値を持つ） | - |
+| MAX_SUPPLY | 最大供給量（現状コードは未使用） | - |
+| AIRDROP_AMOUNT | エアドロップ量（現状コードは未使用） | - |
 | REPORT_GAS | ガスレポート有効化フラグ | - |
 | COINMARKETCAP_API_KEY | CoinMarketCap API キー | - |
 
@@ -69,3 +69,5 @@
 - 秘密情報は必ずGitHub Secretsを使用して管理
 - ローカルテスト実行時とCI環境の設定の一貫性を維持
 - カバレッジレポートは定期的に確認し、必要に応じて改善
+- 品質ゲートは lint / compile / test の3つ。`Deploy to Amoy` と `Comment PR with Coverage Info` は運用アクション・通知であり、失敗してもCIの判定は落とさない
+- `pull_request` イベントで `sticky-pull-request-comment` を使うため、`test.yml` は `pull-requests: write` を明示的に要求する（リポジトリの default_workflow_permissions が `read` のままだと "Resource not accessible by integration" で失敗する）

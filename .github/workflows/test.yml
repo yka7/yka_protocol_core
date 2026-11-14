@@ -10,6 +10,12 @@ jobs:
   test:
     name: Run Tests and Coverage
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # PR にカバレッジコメントを投稿するため必須。
+      # リポジトリの default_workflow_permissions が read のままだと
+      # sticky-pull-request-comment が "Resource not accessible by integration" で失敗する。
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
@@ -62,8 +68,10 @@ jobs:
           name: codecov-umbrella
           verbose: true
 
+      # 通知ステップであり品質ゲートではないため、失敗しても CI を落とさない。
       - name: Comment PR with Coverage Info
         if: github.event_name == 'pull_request'
+        continue-on-error: true
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           message: |
