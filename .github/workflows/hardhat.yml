@@ -10,6 +10,8 @@ jobs:
   test:
     name: Run Hardhat Tests
     runs-on: ubuntu-latest
+    env:
+      HAS_AMOY_RPC: ${{ secrets.AMOY_RPC_URL != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +48,7 @@ jobs:
           AIRDROP_AMOUNT: ${{ secrets.AIRDROP_AMOUNT }}
 
       - name: Deploy to Amoy
+        if: env.HAS_AMOY_RPC == 'true'
         run: npm run deploy:amoy
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}

@@ -39,7 +39,7 @@
 | 変数名 | 説明 | 必須 |
 |--------|------|------|
 | PRIVATE_KEY | デプロイ用ウォレットの秘密鍵 | ✅ |
-| AMOY_RPC_URL | Amoyテストネットのエンドポイント | ✅ |
+| AMOY_RPC_URL | Amoyテストネットのエンドポイント（未設定の場合は Deploy to Amoy ステップをスキップ） | ✅ |
 | POLYGON_RPC_URL | Polygonネットワークのエンドポイント | ✅ |
 | POLYGONSCAN_API_KEY | PolygonScan API キー | ✅ |
 | INITIAL_SUPPLY | 初期供給量 | ✅ |
