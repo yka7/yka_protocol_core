@@ -11,12 +11,20 @@
 **主な責務:**
 - Solidityコントラクトのコンパイル
 - リンター実行による静的解析
-- テストネットへのデプロイ
+- テストネットへのデプロイ（**明示的な opt-in 時のみ**）
 - 環境変数と秘密情報の管理
 
 **実行タイミング:**
 - mainブランチへのプッシュ
 - プルリクエスト作成時
+
+**Amoy デプロイの条件（2026-11-11 修正）:**
+デプロイはリリース操作であり CI の合否判定には含めない。次の条件を**すべて**満たすときだけ実行する。
+- イベントが `push`（プルリクエストでは実行しない）
+- ブランチが `main`
+- リポジトリ変数 `ENABLE_AMOY_DEPLOY` が `true`
+
+変数を設定していない場合、デプロイはスキップされ(run log に "Deploy to Amoy skipped" を表示)、ジョブは成功扱いになる。デプロイを再開する場合は `ENABLE_AMOY_DEPLOY=true` に加えて下記の secret と Ignition パラメータの設定が必要（`docs/development/ci-root-cause.md` 参照）。
 
 ### 2. Test CI (`test.yml`)
 
@@ -31,6 +39,12 @@
 **実行タイミング:**
 - mainブランチへのプッシュ
 - プルリクエスト作成時
+
+**必要な GITHUB_TOKEN 権限（2026-11-11 修正）:**
+カバレッジコメント投稿 (`marocchino/sticky-pull-request-comment`) は `pull-requests: write` を必要とする。
+ワークフローで `permissions: contents: read / pull-requests: write` を明示し、コメントステップは
+`continue-on-error: true`（fork PR ではトークンが read-only に降格されコメントが失敗するため、
+コメント失敗で PR のチェックを赤くしない）。
 
 ## 環境変数
 
@@ -48,6 +62,11 @@
 | REPORT_GAS | ガスレポート有効化フラグ | - |
 | COINMARKETCAP_API_KEY | CoinMarketCap API キー | - |
 
+> 2026-11-11 実測: 当該リポジトリに設定されている secret は `CODECOV_TOKEN` / `MUMBAI_RPC_URL` /
+> `POLYGONSCAN_API_KEY` / `POLYGON_RPC_URL` / `PRIVATE_KEY` のみ。
+> `AMOY_RPC_URL` / `INITIAL_SUPPLY` / `MAX_SUPPLY` / `AIRDROP_AMOUNT` は未設定のため、
+> Amoy デプロイは実行できない状態にある（詳細は `docs/development/ci-root-cause.md`）。
+
 ### Test CI で使用する環境変数
 
 | 変数名 | 説明 | 必須 |
@@ -62,7 +81,7 @@
 
 2. mainブランチへのマージ時:
    1. Test CIによるテスト実行
-   2. Hardhat CIによるテストネットデプロイ
+   2. Hardhat CIによるテストネットデプロイ（`ENABLE_AMOY_DEPLOY=true` のときのみ）
 
 ## 注意事項
 

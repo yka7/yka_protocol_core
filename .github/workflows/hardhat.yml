@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Run Hardhat Tests
@@ -45,7 +48,16 @@ jobs:
           MAX_SUPPLY: ${{ secrets.MAX_SUPPLY }}
           AIRDROP_AMOUNT: ${{ secrets.AIRDROP_AMOUNT }}
 
+      - name: Report Amoy deploy status
+        if: always() && !(github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.ENABLE_AMOY_DEPLOY == 'true')
+        run: |
+          echo "Deploy to Amoy skipped - main push and vars.ENABLE_AMOY_DEPLOY=true are required."
+
+      # Amoy へのデプロイはリリース操作であり CI の合否判定には含めない。
+      # main への push かつ vars.ENABLE_AMOY_DEPLOY == 'true' のときだけ実行する
+      # （既定値 false = デプロイ設定が無い状態では失敗しない）。
       - name: Deploy to Amoy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.ENABLE_AMOY_DEPLOY == 'true'
         run: npm run deploy:amoy
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
