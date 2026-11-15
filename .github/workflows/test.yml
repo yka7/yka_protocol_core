@@ -6,6 +6,14 @@ on:
   pull_request:
     branches: [main]
 
+#  Coverage コメント (marocchino/sticky-pull-request-comment) は
+#  GITHUB_TOKEN に pull-requests: write が必要。
+#  既定の read-only トークンでは "Resource not accessible by integration" で失敗し、
+#  PR のチェックが赤くなるため明示的に権限を付与する。
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   test:
     name: Run Tests and Coverage
@@ -65,6 +73,9 @@ jobs:
       - name: Comment PR with Coverage Info
         if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
+        #  fork PR では GITHUB_TOKEN が read-only に降格されコメント投稿が失敗する。
+        #  コメント失敗で PR のチェックを赤くしない（continue-on-error）。
+        continue-on-error: true
         with:
           message: |
             ### テストカバレッジレポート 📊
